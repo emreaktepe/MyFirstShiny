@@ -1,0 +1,928 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AVM Rota</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* ---------- Design tokens ---------- */
+:root{
+  --paper:#E9EDF1;         /* cool light ground */
+  --surface:#FFFFFF;
+  --surface-2:#F3F6F9;
+  --ink:#16202B;           /* deep cool slate text */
+  --ink-2:#3B4A5A;
+  --muted:#697A8C;
+  --line:#D3DBE3;
+  --line-strong:#BAC6D1;
+  --route:#F2622E;         /* signal orange — the one bold accent */
+  --route-ink:#B83E15;
+  --match:#0E8A70;         /* wayfinding teal-green — "good"/matched */
+  --match-soft:#E1F1EC;
+  --warn:#C6862A;
+  --dim:#9AA9B7;
+  --shadow:0 1px 2px rgba(20,32,43,.06), 0 8px 24px rgba(20,32,43,.07);
+  --radius:14px;
+  --font-disp:"Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --font-body:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  --font-mono:"IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#0D1620;
+    --surface:#152130;
+    --surface-2:#1B2A3B;
+    --ink:#E7EEF5;
+    --ink-2:#B7C5D3;
+    --muted:#8598A9;
+    --line:#26374A;
+    --line-strong:#33485E;
+    --route:#FF7647;
+    --route-ink:#FF9269;
+    --match:#3FBD9E;
+    --match-soft:#12352F;
+    --warn:#E0A64B;
+    --dim:#5E7284;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#0D1620;
+  --surface:#152130;
+  --surface-2:#1B2A3B;
+  --ink:#E7EEF5;
+  --ink-2:#B7C5D3;
+  --muted:#8598A9;
+  --line:#26374A;
+  --line-strong:#33485E;
+  --route:#FF7647;
+  --route-ink:#FF9269;
+  --match:#3FBD9E;
+  --match-soft:#12352F;
+  --warn:#E0A64B;
+  --dim:#5E7284;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.label{
+  font-family:var(--font-disp);
+  text-transform:uppercase;
+  letter-spacing:.09em;
+  font-weight:600;
+}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+button{font-family:inherit}
+:focus-visible{outline:2.5px solid var(--route);outline-offset:2px;border-radius:6px}
+
+/* ---------- Shell ---------- */
+.wrap{max-width:1200px;margin:0 auto;padding:0 20px 64px}
+header.topbar{
+  position:sticky;top:0;z-index:20;
+  background:color-mix(in srgb, var(--paper) 86%, transparent);
+  backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.topbar-inner{max-width:1200px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;gap:14px}
+.brand{display:flex;align-items:center;gap:11px;min-width:0}
+.brand .glyph{
+  width:34px;height:34px;flex:none;border-radius:9px;
+  background:var(--route);color:#fff;display:grid;place-items:center;
+  box-shadow:0 4px 12px color-mix(in srgb,var(--route) 45%, transparent);
+}
+.brand .glyph svg{width:20px;height:20px;display:block}
+.brand .name{font-family:var(--font-disp);font-weight:700;font-size:21px;letter-spacing:.02em;line-height:1}
+.brand .sub{font-size:11.5px;color:var(--muted);letter-spacing:.02em;margin-top:2px}
+.spacer{flex:1}
+.pill-btn{
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);
+  border-radius:999px;padding:7px 12px;font-size:12.5px;cursor:pointer;display:inline-flex;gap:7px;align-items:center;
+}
+.pill-btn:hover{border-color:var(--route);color:var(--ink)}
+
+/* ---------- Hero / search ---------- */
+.hero{padding:30px 0 10px}
+.hero h1{
+  font-family:var(--font-disp);font-weight:700;
+  font-size:clamp(28px,4.4vw,44px);line-height:1.02;letter-spacing:.01em;
+  margin:0 0 10px;text-wrap:balance;max-width:16ch;
+}
+.hero h1 em{color:var(--route);font-style:normal}
+.hero p.lede{color:var(--ink-2);max-width:56ch;margin:0 0 22px;font-size:15.5px}
+.searchbar{
+  display:flex;gap:10px;align-items:stretch;background:var(--surface);
+  border:1.5px solid var(--line-strong);border-radius:14px;padding:8px;box-shadow:var(--shadow);
+  max-width:720px;
+}
+.searchbar:focus-within{border-color:var(--route)}
+.searchbar .ic{display:grid;place-items:center;padding-left:8px;color:var(--muted)}
+.searchbar input{
+  flex:1;border:0;background:transparent;color:var(--ink);font-size:16px;padding:8px 4px;min-width:0;
+}
+.searchbar input:focus{outline:none}
+.searchbar button.go{
+  border:0;background:var(--route);color:#fff;font-family:var(--font-disp);font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;font-size:14px;padding:0 20px;border-radius:9px;cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+}
+.searchbar button.go:hover{filter:brightness(1.05)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 0;max-width:720px}
+.chip{
+  border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+  border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;transition:.12s;
+}
+.chip:hover{border-color:var(--route);color:var(--ink);background:var(--surface)}
+.chip b{color:var(--route);font-weight:600}
+
+/* ---------- Layout grid ---------- */
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:22px;margin-top:26px;align-items:start}
+@media (max-width:940px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.panel-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.panel-h .t{font-family:var(--font-disp);font-weight:600;font-size:14px;letter-spacing:.06em;text-transform:uppercase}
+.panel-h .t b{color:var(--route)}
+.panel-b{padding:14px 16px}
+
+/* interpretation strip */
+.interp{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+.tag{
+  display:inline-flex;align-items:center;gap:6px;font-size:12px;
+  padding:4px 9px;border-radius:7px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink-2);
+}
+.tag .k{color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;font-family:var(--font-disp);font-weight:600}
+.tag.on{border-color:color-mix(in srgb,var(--match) 55%,var(--line));background:var(--match-soft);color:var(--ink)}
+
+/* controls row */
+.controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
+.control{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted)}
+select,.mini{
+  font-family:inherit;font-size:12.5px;color:var(--ink);background:var(--surface-2);
+  border:1px solid var(--line-strong);border-radius:8px;padding:6px 8px;cursor:pointer;
+}
+
+/* result cards */
+.results{display:flex;flex-direction:column;gap:10px;max-height:560px;overflow:auto;padding-right:2px}
+.rc{
+  display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;
+  border:1px solid var(--line);border-radius:11px;padding:11px 12px;background:var(--surface);transition:.12s;
+}
+.rc:hover{border-color:var(--route)}
+.rc .rank{
+  width:44px;height:44px;border-radius:10px;display:grid;place-items:center;
+  background:var(--surface-2);border:1px solid var(--line);
+  font-family:var(--font-disp);font-weight:700;font-size:19px;color:var(--ink-2);
+}
+.rc.top .rank{background:var(--route);color:#fff;border-color:transparent}
+.rc .body{min-width:0}
+.rc .pname{font-weight:600;font-size:14.5px;line-height:1.2}
+.rc .meta{font-size:12.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.rc .meta .store{color:var(--ink-2);font-weight:500}
+.rc .meta .floor{color:var(--route-ink);font-weight:600}
+.rc .side{text-align:right;white-space:nowrap}
+.rc .price{font-family:var(--font-mono);font-weight:600;font-size:15px}
+.rc .stars{color:var(--warn);font-size:12px;letter-spacing:1px}
+.rc .score{
+  margin-top:5px;font-size:11px;font-family:var(--font-disp);font-weight:600;letter-spacing:.03em;
+  color:var(--match);display:inline-flex;align-items:center;gap:5px;
+}
+.rc .score .bar{width:44px;height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden;display:inline-block}
+.rc .score .bar>i{display:block;height:100%;background:var(--match)}
+.empty{color:var(--muted);font-size:14px;padding:24px 6px;text-align:center}
+
+/* mall chooser */
+.malls{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.mall{
+  display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);border-radius:11px;
+  padding:10px 12px;cursor:pointer;background:var(--surface);transition:.12s;
+}
+.mall:hover{border-color:var(--line-strong)}
+.mall.sel{border-color:var(--route);background:color-mix(in srgb,var(--route) 6%,var(--surface))}
+.mall .dot{width:10px;height:10px;border-radius:50%;background:var(--dim);flex:none}
+.mall.sel .dot{background:var(--route)}
+.mall .mn{font-weight:600;font-size:14px}
+.mall .md{font-size:12px;color:var(--muted)}
+.mall .cnt{margin-left:auto;text-align:right}
+.mall .cnt b{font-family:var(--font-mono);font-size:15px;color:var(--match)}
+.mall .cnt span{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.04em}
+
+/* route summary */
+.rsum{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.stat{
+  flex:1;min-width:96px;border:1px solid var(--line);border-radius:11px;padding:10px 12px;background:var(--surface-2);
+}
+.stat .v{font-family:var(--font-mono);font-weight:600;font-size:20px;line-height:1}
+.stat .v small{font-size:12px;color:var(--muted);font-weight:500}
+.stat .k{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:5px;font-family:var(--font-disp);font-weight:600}
+
+/* floor map */
+.mapwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.mapwrap svg{display:block;width:100%;height:auto}
+.entrance-row{display:flex;align-items:center;gap:8px;margin:12px 0 8px;flex-wrap:wrap}
+
+/* steps */
+.steps{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:0}
+.steps li{display:flex;gap:12px;align-items:flex-start;padding:9px 0;position:relative}
+.steps li+li{border-top:1px dashed var(--line)}
+.steps .num{
+  width:26px;height:26px;flex:none;border-radius:50%;background:var(--route);color:#fff;
+  display:grid;place-items:center;font-family:var(--font-disp);font-weight:700;font-size:13px;margin-top:1px;
+}
+.steps .num.flag{background:var(--ink);}
+.steps .num.esc{background:var(--surface);color:var(--route);border:1.5px solid var(--route)}
+.steps .txt{min-width:0}
+.steps .txt .h{font-weight:600;font-size:14px}
+.steps .txt .d{font-size:12.5px;color:var(--muted);margin-top:1px}
+.steps .txt .d .fl{color:var(--route-ink);font-weight:600}
+
+/* legend + note */
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block;border:1px solid var(--line)}
+.note{
+  margin-top:26px;font-size:12.5px;color:var(--muted);line-height:1.6;
+  border-left:3px solid var(--line-strong);padding:2px 0 2px 14px;max-width:74ch;
+}
+.note b{color:var(--ink-2)}
+footer.foot{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+a{color:var(--route-ink)}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <div class="glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.4" fill="currentColor"/></svg>
+      </div>
+      <div>
+        <div class="name">AVM ROTA</div>
+        <div class="sub">gitmeden önce planla · en kısa yürüyüş</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <button class="pill-btn" id="themeBtn" title="Tema değiştir" aria-label="Tema değiştir">
+      <span id="themeIcon">◐</span><span id="themeLbl">Tema</span>
+    </button>
+  </div>
+</header>
+
+<div class="wrap">
+  <section class="hero">
+    <h1>Ne alacağını söyle,<br><em>doğru katı ve mağazaları</em> sana çıkaralım.</h1>
+    <p class="lede">AVM'de saatlerce dolaşma. İhtiyacını gündelik dille yaz; uygun ürünleri fiyat ve kaliteye göre sıralayıp, seni en kısa yürüyüş rotasıyla doğru mağazalara yönlendirelim.</p>
+
+    <div class="searchbar" role="search">
+      <span class="ic" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </span>
+      <input id="q" type="text" autocomplete="off"
+        placeholder="ör. smokin için uygun bir ayakkabı arıyorum"
+        aria-label="Ne almak istiyorsun?">
+      <button class="go" id="goBtn">Rota çıkar</button>
+    </div>
+
+    <div class="chips" id="chips" aria-label="Örnek aramalar"></div>
+  </section>
+
+  <div class="grid">
+    <!-- LEFT: interpretation + results -->
+    <section class="panel" aria-label="Sonuçlar">
+      <div class="panel-h">
+        <div class="t">Eşleşen ürünler <b id="resCount"></b></div>
+        <div class="control">
+          <span class="label" style="font-size:10.5px;color:var(--muted)">Sırala</span>
+          <select id="sortSel" aria-label="Sıralama">
+            <option value="score">En iyi eşleşme</option>
+            <option value="priceAsc">Fiyat (artan)</option>
+            <option value="priceDesc">Fiyat (azalan)</option>
+            <option value="quality">Kalite (yüksek)</option>
+          </select>
+        </div>
+      </div>
+      <div class="panel-b">
+        <div class="interp" id="interp"></div>
+        <div class="results" id="results"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: mall + route -->
+    <section class="panel" aria-label="Rota">
+      <div class="panel-h">
+        <div class="t">Rota <b>planı</b></div>
+        <div class="control"><span id="routeMallName" class="mono" style="color:var(--ink-2)"></span></div>
+      </div>
+      <div class="panel-b">
+        <div class="malls" id="malls"></div>
+
+        <div class="rsum" id="rsum"></div>
+
+        <div class="entrance-row">
+          <span class="label" style="font-size:11px;color:var(--muted)">Giriş noktası</span>
+          <select id="entranceSel" aria-label="Giriş noktası"></select>
+        </div>
+
+        <div class="mapwrap"><div id="map"></div></div>
+        <div class="legend" id="legend"></div>
+
+        <ol class="steps" id="steps"></ol>
+      </div>
+    </section>
+  </div>
+
+  <p class="note" id="note"></p>
+
+  <footer class="foot">
+    <span>AVM Rota · erken prototip</span>
+    <span class="mono">İstinye Park · Zorlu Center · İstanbul Cevahir</span>
+  </footer>
+</div>
+
+<script>
+/* =====================================================================
+   AVM ROTA — prototype logic
+   Veri: gerçek İstanbul AVM'lerinin kat yapısı ve marka karması temel
+   alınarak kürasyonla oluşturulmuş örnek katalog (bkz. sayfa altı not).
+   ===================================================================== */
+
+/* ---------- 1. Bilgi tabanı: kategori & durum sözlüğü (TR) ---------- */
+const CATS = {
+  ayakkabi:{label:"ayakkabı", syn:["ayakkabi","ayakkabı","ayakkabılar","shoe","shoes","çizme","cizme","bot","sneaker","sneakers","spor ayakkabı","klasik ayakkabı","rugan","oxford","loafer","makosen","topuklu","babet","stiletto"]},
+  takim:{label:"takım / smokin", syn:["takım","takim","takım elbise","takim elbise","blazer","ceket","jile"]},
+  gomlek:{label:"gömlek", syn:["gömlek","gomlek","shirt","tişört","tisort","t-shirt"]},
+  elbise:{label:"elbise", syn:["elbise","dress","abiye","gece elbisesi","tuvalet"]},
+  kravat:{label:"kravat / papyon", syn:["kravat","papyon","tie","bow tie","fular"]},
+  kemer:{label:"kemer", syn:["kemer","belt"]},
+  canta:{label:"çanta", syn:["çanta","canta","bag","cüzdan","cuzdan","valiz","evrak çantası"]},
+  parfum:{label:"parfüm / kozmetik", syn:["parfüm","parfum","kozmetik","makyaj","cilt bakım","krem"]}
+};
+const OCCASIONS = {
+  formal:{label:"resmi / smokin", syn:["smokin","damatlık","damatlik","düğün","dugun","nişan","nisan","davet","gece","abiye","balo","mezuniyet","resmi","klasik","takım için","özel gün","kokteyl"]},
+  business:{label:"iş / ofis", syn:["iş","ofis","toplantı","toplanti","business","klasik iş","mülakat","mulakat"]},
+  casual:{label:"günlük", syn:["günlük","gunluk","rahat","gündelik","casual","sokak","gezme"]},
+  sport:{label:"spor", syn:["spor","koşu","kosu","antrenman","fitness","gym","yürüyüş","yuruyus","basketbol","futbol"]}
+};
+const PRICE_LOW = ["ucuz","uygun fiyat","ekonomik","hesaplı","hesapli","bütçe","butce","kelepir","indirim","cepte"];
+const PRICE_HIGH = ["pahalı","pahali","lüks","luks","premium","üst segment","kaliteli marka","markalı","markali","first class"];
+const QUAL_HIGH = ["kaliteli","dayanıklı","dayanikli","sağlam","saglam","orijinal","hakiki deri","deri","uzun ömür","garantili"];
+const GENDERS = {erkek:["erkek","bay","adam","damat","erkekler"], kadin:["kadın","kadin","bayan","kadınlar","gelin"], cocuk:["çocuk","cocuk","bebek","kız çocuk","erkek çocuk"]};
+
+/* ---------- 2. AVM verisi ---------- */
+function P(name,price,tier,quality,tags,gender){return {name,price,tier,quality,tags,gender:gender||"unisex"};}
+
+const MALLS = [
+  {
+    id:"istinye", name:"İstinye Park", area:"Sarıyer, İstanbul",
+    floorLabels:{2:"KAT 2",1:"KAT 1",0:"ZEMİN"},
+    entrances:[{name:"Vadi Girişi (Zemin)",floor:0,pos:6},{name:"Meydan Girişi (Zemin)",floor:0,pos:94}],
+    stores:[
+      {id:"is-beymen",name:"Beymen",floor:1,pos:20,cats:["ayakkabi","takim","gomlek","kemer"],tier:3,quality:5,tags:["formal","business"],
+        products:[P("Rugan Klasik Oxford",8450,3,5,["formal","business"],"erkek"),P("Smokin Takımı (Slim Fit)",24900,3,5,["formal"],"erkek")]},
+      {id:"is-vakko",name:"Vakko",floor:1,pos:31,cats:["ayakkabi","takim","kravat"],tier:3,quality:5,tags:["formal","business"],
+        products:[P("Patent Deri Smokin Ayakkabısı",7290,3,5,["formal"],"erkek"),P("İpek Papyon",1990,3,5,["formal"],"erkek")]},
+      {id:"is-damat",name:"Damat Tween",floor:1,pos:42,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takım Elbise",9750,2,4,["formal"],"erkek")]},
+      {id:"is-divarese",name:"Divarese",floor:1,pos:55,cats:["ayakkabi","canta"],tier:2,quality:4,tags:["formal","business","casual"],
+        products:[P("Klasik Bağcıklı Deri Ayakkabı",3899,2,4,["formal","business"],"erkek")]},
+      {id:"is-derimod",name:"Derimod",floor:0,pos:66,cats:["ayakkabi","canta","kemer"],tier:2,quality:4,tags:["formal","business","casual"],
+        products:[P("Hakiki Deri Oxford",3499,2,4,["formal","business"],"erkek"),P("Deri Loafer",2999,2,4,["business","casual"],"erkek")]},
+      {id:"is-hotic",name:"Hotiç",floor:0,pos:73,cats:["ayakkabi","canta"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Rugan Klasik Ayakkabı",4299,2,4,["formal"],"erkek")]},
+      {id:"is-lacoste",name:"Lacoste",floor:0,pos:55,cats:["gomlek","ayakkabi"],tier:2,quality:4,tags:["casual","business","sport"],
+        products:[P("Deri Sneaker",4199,2,4,["casual","sport"],"unisex")]},
+      {id:"is-camper",name:"Camper",floor:0,pos:82,cats:["ayakkabi"],tier:2,quality:4,tags:["casual"],
+        products:[P("Peu Sneaker",4590,2,4,["casual"],"unisex")]},
+      {id:"is-zara",name:"Zara",floor:0,pos:40,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:3,tags:["casual","business"],
+        products:[P("Klasik Bağcıklı Ayakkabı",1799,1,3,["business","formal"],"erkek")]},
+      {id:"is-nike",name:"Nike",floor:2,pos:60,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Air Zoom Koşu Ayakkabısı",5499,2,4,["sport"],"unisex")]},
+      {id:"is-hm",name:"H&M",floor:2,pos:30,cats:["gomlek","takim","ayakkabi"],tier:1,quality:2,tags:["casual"]},
+      {id:"is-mango",name:"Mango",floor:0,pos:48,cats:["elbise","gomlek","canta"],tier:1,quality:3,tags:["casual","business"]},
+      {id:"is-sephora",name:"Sephora",floor:0,pos:20,cats:["parfum"],tier:2,quality:4,tags:[]}
+    ]
+  },
+  {
+    id:"zorlu", name:"Zorlu Center", area:"Beşiktaş, İstanbul",
+    floorLabels:{1:"TERAS",0:"ZEMİN","-1":"B1","-2":"METRO"},
+    entrances:[{name:"Ana Giriş (Zemin)",floor:0,pos:8},{name:"Metro Girişi (-2)",floor:-2,pos:8}],
+    stores:[
+      {id:"zo-beymen",name:"Beymen",floor:0,pos:34,cats:["ayakkabi","takim","gomlek"],tier:3,quality:5,tags:["formal","business"],
+        products:[P("Rugan Klasik Oxford",8450,3,5,["formal"],"erkek"),P("Smokin Takımı",24900,3,5,["formal"],"erkek")]},
+      {id:"zo-vakko",name:"Vakko",floor:0,pos:45,cats:["ayakkabi","takim","kravat"],tier:3,quality:5,tags:["formal"],
+        products:[P("Patent Deri Smokin Ayakkabısı",7290,3,5,["formal"],"erkek")]},
+      {id:"zo-massimo",name:"Massimo Dutti",floor:0,pos:25,cats:["gomlek","takim","ayakkabi"],tier:2,quality:4,tags:["business","formal","casual"],
+        products:[P("Deri Klasik Ayakkabı",4290,2,4,["formal","business"],"erkek")]},
+      {id:"zo-kooples",name:"The Kooples",floor:0,pos:60,cats:["gomlek","takim","ayakkabi"],tier:3,quality:4,tags:["business","casual"]},
+      {id:"zo-divarese",name:"Divarese",floor:-1,pos:42,cats:["ayakkabi"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Klasik Deri Ayakkabı",3899,2,4,["formal","business"],"erkek")]},
+      {id:"zo-zara",name:"Zara",floor:-1,pos:30,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:3,tags:["casual","business"],
+        products:[P("Klasik Ayakkabı",1799,1,3,["business","formal"],"erkek")]},
+      {id:"zo-sneaks",name:"Sneaks Up",floor:-1,pos:52,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"],
+        products:[P("Nike / Converse Sneaker",3200,2,3,["sport","casual"],"unisex")]},
+      {id:"zo-asics",name:"Asics",floor:-1,pos:62,cats:["ayakkabi"],tier:2,quality:4,tags:["sport"],
+        products:[P("Gel Koşu Ayakkabısı",4990,2,4,["sport"],"unisex")]},
+      {id:"zo-adidas",name:"Adidas",floor:-2,pos:55,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Ultraboost",5499,2,4,["sport"],"unisex")]},
+      {id:"zo-camper",name:"Camper",floor:-2,pos:40,cats:["ayakkabi"],tier:2,quality:4,tags:["casual"],
+        products:[P("Peu Sneaker",4590,2,4,["casual"],"unisex")]},
+      {id:"zo-sephora",name:"Sephora",floor:-1,pos:20,cats:["parfum"],tier:2,quality:4,tags:[]}
+    ]
+  },
+  {
+    id:"cevahir", name:"İstanbul Cevahir", area:"Şişli, İstanbul",
+    floorLabels:{4:"KAT 4",3:"KAT 3",2:"KAT 2",1:"KAT 1",0:"ZEMİN","-1":"B1"},
+    entrances:[{name:"Büyükdere Cd. Girişi (Zemin)",floor:0,pos:6},{name:"Metro Girişi (B1)",floor:-1,pos:10}],
+    stores:[
+      {id:"ce-damat",name:"Damat Tween",floor:2,pos:30,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takım Elbise",9750,2,4,["formal"],"erkek")]},
+      {id:"ce-derimod",name:"Derimod",floor:1,pos:40,cats:["ayakkabi","canta"],tier:2,quality:4,tags:["formal","business","casual"],
+        products:[P("Hakiki Deri Oxford",3499,2,4,["formal","business"],"erkek")]},
+      {id:"ce-kemal",name:"Kemal Tanca",floor:1,pos:55,cats:["ayakkabi"],tier:2,quality:3,tags:["formal","business"],
+        products:[P("Klasik Bağcıklı Ayakkabı",2799,2,3,["formal","business"],"erkek")]},
+      {id:"ce-inci",name:"İnci",floor:1,pos:62,cats:["ayakkabi","canta"],tier:1,quality:3,tags:["formal","business","casual"],
+        products:[P("Deri Klasik Ayakkabı",2499,1,3,["formal","business"],"erkek")]},
+      {id:"ce-aykdunya",name:"Ayakkabı Dünyası",floor:0,pos:70,cats:["ayakkabi"],tier:1,quality:3,tags:["formal","business","casual","sport"],
+        products:[P("Klasik Erkek Ayakkabı",1999,1,3,["formal","business"],"erkek"),P("Günlük Sneaker",1499,1,3,["casual"],"unisex")]},
+      {id:"ce-boyner",name:"Boyner",floor:2,pos:55,cats:["ayakkabi","gomlek","takim","parfum"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Fabrika Klasik Ayakkabı",2299,1,3,["formal","business"],"erkek")]},
+      {id:"ce-flo",name:"Flo",floor:0,pos:45,cats:["ayakkabi"],tier:1,quality:3,tags:["casual","sport","business"],
+        products:[P("Dockers Klasik Ayakkabı",1799,1,3,["business","formal"],"erkek"),P("Kinetix Sneaker",999,1,2,["casual","sport"],"unisex")]},
+      {id:"ce-nike",name:"Nike",floor:3,pos:40,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Revolution Koşu",2999,2,4,["sport"],"unisex")]},
+      {id:"ce-sneaks",name:"Sneaks Up",floor:3,pos:55,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"]},
+      {id:"ce-lcw",name:"LC Waikiki",floor:0,pos:25,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:2,tags:["casual","business"],
+        products:[P("Klasik Ayakkabı",899,1,2,["business","formal"],"erkek")]},
+      {id:"ce-defacto",name:"DeFacto",floor:2,pos:70,cats:["gomlek","takim","ayakkabi"],tier:1,quality:2,tags:["casual","business"]},
+      {id:"ce-koton",name:"Koton",floor:1,pos:25,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
+      {id:"ce-mavi",name:"Mavi",floor:1,pos:78,cats:["gomlek","ayakkabi"],tier:1,quality:3,tags:["casual"]},
+      {id:"ce-watsons",name:"Watsons",floor:0,pos:60,cats:["parfum"],tier:1,quality:3,tags:[]}
+    ]
+  }
+];
+
+/* ---------- 3. Metin çözümleyici (niyet çıkarımı) ---------- */
+function norm(s){
+  return (s||"").toLocaleLowerCase("tr")
+    .replaceAll("ı","i").replaceAll("İ","i").replaceAll("ş","s").replaceAll("ğ","g")
+    .replaceAll("ü","u").replaceAll("ö","o").replaceAll("ç","c");
+}
+function tokenize(t){ return t.split(/[^a-z0-9]+/).filter(Boolean); }
+// Tek kelimeler kelime-sınırıyla (uzun eşleşmelerde ek toleransı), çok kelimeliler ifade olarak eşleşir.
+// Böylece "iş" kısa kelimesi "ayakkabısı" içinde yanlışlıkla eşleşmez.
+function synHit(tokens, textNorm, syn){
+  const s=norm(syn);
+  if(s.includes(" ")) return textNorm.includes(s);
+  return tokens.some(tok => tok===s || (s.length>=4 && tok.startsWith(s)));
+}
+function hitAny(tokens, textNorm, list){ return list.some(w=>synHit(tokens,textNorm,w)); }
+
+function parseQuery(raw){
+  const textNorm = norm(raw);
+  const tokens = tokenize(textNorm);
+  // kategori: en uzun (en spesifik) eşleşme kazanır
+  let category=null, catConf=0;
+  for(const [key,val] of Object.entries(CATS)){
+    for(const w of val.syn){ if(synHit(tokens,textNorm,w) && norm(w).length>catConf){ category=key; catConf=norm(w).length; } }
+  }
+  // durum / ortam
+  const occasions=[];
+  for(const [key,val] of Object.entries(OCCASIONS)){ if(hitAny(tokens,textNorm,val.syn)) occasions.push(key); }
+  // "smokin/damatlık" tek başına ürün olarak yazıldıysa (başka ürün yoksa) → takım
+  if(!category && occasions.includes("formal") && /\b(smokin|damatlik|damatlık)\b/.test(textNorm)) category="takim";
+  // fiyat & kalite eğilimi
+  let pricePref=null;
+  if(hitAny(tokens,textNorm,PRICE_LOW)) pricePref="low";
+  if(hitAny(tokens,textNorm,PRICE_HIGH)) pricePref="high";
+  const qualityHigh = hitAny(tokens,textNorm,QUAL_HIGH) || pricePref==="high";
+  // cinsiyet
+  let gender=null;
+  for(const [g,list] of Object.entries(GENDERS)){ if(hitAny(tokens,textNorm,list)) gender=g; }
+  // bütçe (ör. "3000 tl altında", "5 bin civarı")
+  let budget=null;
+  const mThousand = textNorm.match(/(\d+)\s*bin/); if(mThousand) budget=parseInt(mThousand[1])*1000;
+  const mNum = textNorm.match(/(\d{3,6})\s*(tl|lira|₺)?/); if(mNum && !mThousand) budget=parseInt(mNum[1]);
+  return {raw,category,occasions,pricePref,qualityHigh,gender,budget};
+}
+
+// Ürün adından kategori çıkarımı (ör. "Patent Deri Smokin Ayakkabısı" → ayakkabi,
+// "İpek Papyon" → kravat). Böylece bir mağazanın tüm ürünleri değil, aranan
+// kategoriye ait olanları listelenir.
+function productCat(name, store){
+  const tn=norm(name), tks=tokenize(tn);
+  let cat=null,conf=0;
+  for(const [key,val] of Object.entries(CATS)){
+    for(const w of val.syn){ if(synHit(tks,tn,w) && norm(w).length>conf){ cat=key; conf=norm(w).length; } }
+  }
+  return cat || store.cats[0];
+}
+
+/* ---------- 4. Eşleştirme & puanlama ---------- */
+function stars(n){return "★★★★★".slice(0,n)+"☆☆☆☆☆".slice(0,5-n);}
+function tl(n){return "₺"+n.toLocaleString("tr-TR");}
+function tierGlyph(t){return "₺₺₺".slice(0,t);}
+
+function scoreItem(item, q){
+  let s=42;
+  const tags=item.tags||[];
+  if(q.occasions.length){
+    const inter=q.occasions.filter(o=>tags.includes(o));
+    s += 22*inter.length;
+    if(inter.length===0){
+      s -= 22;
+      // yanlış ortam (spor ürünü resmi aramada) ekstra ceza
+      if(q.occasions.includes("formal") && (tags.includes("sport")||tags.includes("casual")) && !tags.includes("formal")) s-=14;
+    }
+  }
+  s += (item.quality-3)*6;
+  if(q.qualityHigh) s += (item.quality-3)*6;
+  if(q.pricePref==="low") s += (2-item.tier)*9;
+  if(q.pricePref==="high") s += (item.tier-2)*6;
+  if(q.budget && item.price){
+    if(item.price<=q.budget) s += 12;
+    else s -= Math.min(34, ((item.price-q.budget)/q.budget)*45);
+  }
+  if(q.gender && item.gender && item.gender!=="unisex" && item.gender!==q.gender) s -= 16;
+  return Math.max(4,Math.min(100,Math.round(s)));
+}
+
+function buildMatches(q){
+  const out=[];
+  if(!q.category) return out;
+  for(const mall of MALLS){
+    for(const st of mall.stores){
+      if(!st.cats.includes(q.category)) continue;
+      // yalnızca aranan kategoriye ait ürünler
+      let used=false;
+      for(const p of (st.products||[])){
+        if(productCat(p.name,st)!==q.category) continue;
+        const item={name:p.name,price:p.price,tier:p.tier,quality:p.quality,tags:p.tags,gender:p.gender};
+        const score=scoreItem(item,q);
+        out.push({mallId:mall.id,mallName:mall.name,storeId:st.id,storeName:st.name,floor:st.floor,pos:st.pos,
+                  name:p.name,price:p.price,tier:p.tier,quality:p.quality,tags:p.tags,score});
+        used=true;
+      }
+      if(!used){
+        const item={name:st.name,price:null,tier:st.tier,quality:st.quality,tags:st.tags,gender:"unisex"};
+        const score=scoreItem(item,q);
+        out.push({mallId:mall.id,mallName:mall.name,storeId:st.id,storeName:st.name,floor:st.floor,pos:st.pos,
+                  name:st.name+" — "+CATS[q.category].label,price:null,tier:st.tier,quality:st.quality,tags:st.tags,score});
+      }
+    }
+  }
+  return out;
+}
+
+/* ---------- 5. Rota planlayıcı ---------- */
+const POS_M = 1.25;          // pos birimi başına metre
+const WALK = 1.2;            // m/sn
+const ESC_SEC = 42;          // kat başına yürüyen merdiven süresi
+const ESC_POS = 50;          // yürüyen merdiven konumu
+
+function floorsOf(mall){
+  const set=new Set(mall.stores.map(s=>s.floor));
+  mall.entrances.forEach(e=>set.add(e.floor));
+  Object.keys(mall.floorLabels).forEach(k=>set.add(parseInt(k)));
+  return [...set].sort((a,b)=>b-a); // üst kat önce
+}
+function travel(a,b){ // a,b: {floor,pos}
+  if(a.floor===b.floor) return {m:Math.abs(a.pos-b.pos)*POS_M, esc:0};
+  const m=(Math.abs(a.pos-ESC_POS)+Math.abs(b.pos-ESC_POS))*POS_M;
+  return {m, esc:Math.abs(a.floor-b.floor)};
+}
+function planRoute(mall, storeList, entrance){
+  const remaining=[...storeList];
+  const order=[];
+  let cur={floor:entrance.floor,pos:entrance.pos};
+  let totalM=0, totalEsc=0;
+  while(remaining.length){
+    let bi=0,best=Infinity,bt=null;
+    remaining.forEach((s,i)=>{
+      const tr=travel(cur,s);
+      const cost=tr.m + tr.esc*ESC_SEC*WALK; // eş-metre maliyet
+      if(cost<best){best=cost;bi=i;bt=tr;}
+    });
+    const s=remaining.splice(bi,1)[0];
+    totalM+=bt.m; totalEsc+=bt.esc;
+    order.push(s); cur={floor:s.floor,pos:s.pos};
+  }
+  const secs=totalM/WALK + totalEsc*ESC_SEC;
+  return {order,totalM:Math.round(totalM),totalEsc,mins:Math.max(1,Math.round(secs/60))};
+}
+
+/* ---------- 6. State ---------- */
+let state={q:null,matches:[],sort:"score",mallId:null,entranceIdx:0};
+
+/* ---------- 7. Render ---------- */
+const $=id=>document.getElementById(id);
+
+function renderInterp(q){
+  const el=$("interp"); el.innerHTML="";
+  const add=(k,v,on)=>{const d=document.createElement("span");d.className="tag"+(on?" on":"");d.innerHTML=`<span class="k">${k}</span> ${v}`;el.appendChild(d);};
+  add("ürün", q.category?CATS[q.category].label:"—", !!q.category);
+  add("ortam", q.occasions.length?q.occasions.map(o=>OCCASIONS[o].label).join(", "):"farketmez", q.occasions.length>0);
+  if(q.pricePref) add("fiyat", q.pricePref==="low"?"uygun öncelikli":"üst segment", true);
+  if(q.qualityHigh) add("kalite", "yüksek öncelikli", true);
+  if(q.gender) add("kime", q.gender, true);
+  if(q.budget) add("bütçe", "≤ "+tl(q.budget), true);
+}
+
+function sortMatches(list,mode){
+  const a=[...list];
+  if(mode==="score") a.sort((x,y)=>y.score-x.score || y.quality-x.quality);
+  if(mode==="priceAsc") a.sort((x,y)=>(x.price??1e9)-(y.price??1e9));
+  if(mode==="priceDesc") a.sort((x,y)=>(y.price??-1)-(x.price??-1));
+  if(mode==="quality") a.sort((x,y)=>y.quality-x.quality || y.score-x.score);
+  return a;
+}
+
+function renderResults(){
+  const list=sortMatches(state.matches,state.sort);
+  $("resCount").textContent = list.length?("· "+list.length):"";
+  const el=$("results"); el.innerHTML="";
+  if(!list.length){
+    el.innerHTML=`<div class="empty">Bu arama için katalogda eşleşme yok.<br>Farklı bir ürün ya da örnek aramalardan birini dene.</div>`;
+    return;
+  }
+  list.slice(0,14).forEach((m,i)=>{
+    const div=document.createElement("div");
+    div.className="rc"+(i===0&&state.sort==="score"?" top":"");
+    const priceHtml=m.price?tl(m.price):`<span style="color:var(--muted);font-size:12px">${tierGlyph(m.tier)}</span>`;
+    div.innerHTML=`
+      <div class="rank">${i+1}</div>
+      <div class="body">
+        <div class="pname">${m.name}</div>
+        <div class="meta">
+          <span class="store">${m.storeName}</span>
+          <span class="floor">${floorLabel(m.mallId,m.floor)}</span>
+          <span>${m.mallName}</span>
+        </div>
+      </div>
+      <div class="side">
+        <div class="price">${priceHtml}</div>
+        <div class="stars" title="kalite">${stars(m.quality)}</div>
+        <div class="score"><span class="bar"><i style="width:${m.score}%"></i></span>%${m.score}</div>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+function floorLabel(mallId,floor){
+  const mall=MALLS.find(m=>m.id===mallId);
+  return (mall&&mall.floorLabels[floor])||("KAT "+floor);
+}
+
+function mallAggregates(){
+  // her AVM için: eşleşen benzersiz mağazalar + en iyi skor
+  const agg={};
+  for(const m of state.matches){
+    const a=agg[m.mallId]||(agg[m.mallId]={stores:{},best:0});
+    a.best=Math.max(a.best,m.score);
+    const s=a.stores[m.storeId]||(a.stores[m.storeId]={storeId:m.storeId,storeName:m.storeName,floor:m.floor,pos:m.pos,best:0});
+    s.best=Math.max(s.best,m.score);
+  }
+  return agg;
+}
+
+function renderMalls(){
+  const agg=mallAggregates();
+  const el=$("malls"); el.innerHTML="";
+  const ranked=MALLS.map(mall=>{
+    const a=agg[mall.id];
+    const stores=a?Object.values(a.stores):[];
+    return {mall,count:stores.length,best:a?a.best:0};
+  }).sort((x,y)=>y.best-x.best || y.count-x.count);
+
+  if(!state.mallId || !agg[state.mallId]){ state.mallId = ranked.find(r=>r.count)?.mall.id || ranked[0].mall.id; }
+
+  ranked.forEach(r=>{
+    const div=document.createElement("div");
+    div.className="mall"+(r.mall.id===state.mallId?" sel":"");
+    div.tabIndex=0; div.setAttribute("role","button");
+    div.innerHTML=`
+      <span class="dot"></span>
+      <div>
+        <div class="mn">${r.mall.name}</div>
+        <div class="md">${r.mall.area}</div>
+      </div>
+      <div class="cnt"><b>${r.count}</b><span>MAĞAZA</span></div>`;
+    const pick=()=>{state.mallId=r.mall.id;state.entranceIdx=0;renderRoutePanel();renderMalls();};
+    div.onclick=pick;
+    div.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();pick();}};
+    el.appendChild(div);
+  });
+}
+
+function currentMallStores(){
+  const agg=mallAggregates();
+  const a=agg[state.mallId];
+  if(!a) return [];
+  const all=Object.values(a.stores).sort((x,y)=>y.best-x.best);
+  const top=all.length?all[0].best:0;
+  const floor=Math.max(40, top-20);           // belirgin şekilde zayıf eşleşenleri rotaya alma
+  return all.filter(s=>s.best>=floor).slice(0,5);
+}
+
+function renderRoutePanel(){
+  const mall=MALLS.find(m=>m.id===state.mallId);
+  $("routeMallName").textContent = mall?mall.name:"";
+  // giriş seçenekleri
+  const es=$("entranceSel"); es.innerHTML="";
+  mall.entrances.forEach((e,i)=>{const o=document.createElement("option");o.value=i;o.textContent=e.name;es.appendChild(o);});
+  es.value=state.entranceIdx;
+  es.onchange=()=>{state.entranceIdx=parseInt(es.value);renderRoutePanel();};
+
+  const stores=currentMallStores();
+  const entrance=mall.entrances[state.entranceIdx];
+  const plan=stores.length?planRoute(mall,stores,entrance):{order:[],totalM:0,totalEsc:0,mins:0};
+
+  // özet
+  $("rsum").innerHTML=`
+    <div class="stat"><div class="v">${plan.order.length}</div><div class="k">Durak</div></div>
+    <div class="stat"><div class="v">${plan.totalM}<small> m</small></div><div class="k">Yürüyüş</div></div>
+    <div class="stat"><div class="v">${plan.totalEsc}</div><div class="k">Kat değişimi</div></div>
+    <div class="stat"><div class="v">~${plan.mins}<small> dk</small></div><div class="k">Süre</div></div>`;
+
+  $("map").innerHTML=buildMap(mall,plan.order,entrance);
+  $("legend").innerHTML=`
+    <span><i class="sw" style="background:var(--route);border-color:var(--route)"></i> Rota / durak</span>
+    <span><i class="sw" style="background:var(--match-soft);border-color:var(--match)"></i> Eşleşen mağaza</span>
+    <span><i class="sw" style="background:var(--surface);border-color:var(--line-strong)"></i> Diğer mağaza</span>
+    <span><svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px"><path d="M4 20 L10 20 L20 6" stroke="var(--muted)" stroke-width="2" fill="none"/></svg> Yürüyen merdiven</span>`;
+
+  renderSteps(mall,plan,entrance);
+}
+
+/* ---- SVG kat planı ---- */
+function buildMap(mall,order,entrance){
+  const floors=floorsOf(mall);
+  const laneH=104, padTop=14, W=760, labelX=18, x0=104, x1=742;
+  const H=padTop*2 + floors.length*laneH;
+  const idx=f=>floors.indexOf(f);
+  const posToX=p=>x0+(p/100)*(x1-x0);
+  const laneTop=fi=>padTop+fi*laneH;
+  const centerY=f=>laneTop(idx(f))+laneH/2;
+  const escX=posToX(ESC_POS);
+  const inOrder={}; order.forEach((s,i)=>inOrder[s.storeId]=i+1);
+  const OFF=20, BH=22; // koridordan sapma ve kutu yüksekliği
+
+  // mağazaları koridorun iki yanına dağıt (gerçek AVM cephesi gibi) → etiket çakışması olmaz
+  const meta={};
+  floors.forEach(f=>{
+    mall.stores.filter(s=>s.floor===f).sort((a,b)=>a.pos-b.pos)
+      .forEach((s,i)=>{ meta[s.id]={cx:posToX(s.pos), cyc:centerY(f), yOff:(i%2===0?OFF:-OFF)}; });
+  });
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${mall.name} kat planı ve rota">`;
+  // arka plan şeritleri + kat etiketleri + koridor
+  floors.forEach((f,fi)=>{
+    const y=laneTop(fi);
+    svg+=`<rect x="88" y="${y+7}" width="${W-96}" height="${laneH-14}" rx="10" fill="var(--surface)" stroke="var(--line)"/>`;
+    svg+=`<text x="${labelX}" y="${centerY(f)-3}" font-family="var(--font-disp)" font-weight="700" font-size="14" fill="var(--ink-2)">${(mall.floorLabels[f]||("KAT "+f))}</text>`;
+    svg+=`<line x1="${x0}" y1="${centerY(f)}" x2="${x1}" y2="${centerY(f)}" stroke="var(--line)" stroke-dasharray="2 5"/>`;
+    svg+=`<g transform="translate(${escX-9},${centerY(f)-9})" opacity=".65"><path d="M2 16 L8 16 L16 2" stroke="var(--dim)" stroke-width="2" fill="none" stroke-linecap="round"/></g>`;
+  });
+  // yürüyen merdiven dikey bağlantı
+  svg+=`<line x1="${escX}" y1="${padTop+7}" x2="${escX}" y2="${H-padTop-7}" stroke="var(--line-strong)" stroke-dasharray="1 6" opacity=".6"/>`;
+
+  // mağaza kutuları (önce diğerleri, sonra eşleşenler üstte)
+  const drawStore=(st)=>{
+    const m=meta[st.id]; const cx=m.cx, cy=m.cyc+m.yOff;
+    const matched=!!inOrder[st.id];
+    const w=Math.max(42, st.name.length*5.8+14);
+    const fill=matched?"var(--match-soft)":"var(--surface-2)";
+    const stroke=matched?"var(--match)":"var(--line-strong)";
+    const tcol=matched?"var(--ink)":"var(--muted)";
+    return `<g><rect x="${cx-w/2}" y="${cy-BH/2}" width="${w}" height="${BH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${matched?1.5:1}"/>`+
+           `<text x="${cx}" y="${cy+3.5}" text-anchor="middle" font-size="10.5" font-weight="${matched?600:500}" fill="${tcol}" font-family="var(--font-body)">${st.name}</text></g>`;
+  };
+  mall.stores.filter(s=>!inOrder[s.id]).forEach(s=>svg+=drawStore(s));
+
+  // rota çizgisi (koridor boyunca)
+  const path=[{floor:entrance.floor,pos:entrance.pos},...order.map(s=>({floor:s.floor,pos:s.pos}))];
+  let d="";
+  for(let i=0;i<path.length;i++){
+    const a=path[i]; const ax=posToX(a.pos), ay=centerY(a.floor);
+    if(i===0){ d=`M ${ax} ${ay}`; continue; }
+    const prev=path[i-1];
+    if(prev.floor===a.floor){ d+=` L ${ax} ${ay}`; }
+    else{ d+=` L ${escX} ${centerY(prev.floor)} L ${escX} ${ay} L ${ax} ${ay}`; }
+  }
+  svg+=`<path d="${d}" fill="none" stroke="var(--route)" stroke-width="3" stroke-linejoin="round" stroke-linecap="round" opacity=".92"/>`;
+
+  // eşleşen mağazalar (üstte) + kısa bağlantı çizgisi koridora
+  order.forEach(s=>{
+    const m=meta[s.storeId]; const sign=m.yOff>0?1:-1;
+    svg+=`<line x1="${m.cx}" y1="${m.cyc}" x2="${m.cx}" y2="${m.cyc+m.yOff-sign*BH/2}" stroke="var(--route)" stroke-width="2" opacity=".55"/>`;
+  });
+  mall.stores.filter(s=>inOrder[s.id]).forEach(s=>svg+=drawStore(s));
+
+  // giriş işareti (koridorda)
+  const ex=posToX(entrance.pos), ey=centerY(entrance.floor);
+  svg+=`<g transform="translate(${ex},${ey})">
+     <circle r="11" fill="var(--ink)"/>
+     <path d="M-4 -1 L0 -6 L4 -1 M0 -6 L0 5" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round" transform="rotate(90)"/>
+   </g>`;
+
+  // numaralı durak rozetleri (kapının önünde, koridorda)
+  order.forEach((s,i)=>{
+    const m=meta[s.storeId];
+    svg+=`<g transform="translate(${m.cx},${m.cyc})">
+       <circle r="10.5" fill="var(--route)" stroke="var(--surface)" stroke-width="2"/>
+       <text y="4" text-anchor="middle" font-size="12" font-weight="700" fill="#fff" font-family="var(--font-disp)">${i+1}</text>
+     </g>`;
+  });
+
+  svg+=`</svg>`;
+  return svg;
+}
+
+function renderSteps(mall,plan,entrance){
+  const el=$("steps"); el.innerHTML="";
+  const li=(cls,num,h,d)=>{const x=document.createElement("li");x.innerHTML=`<span class="num ${cls}">${num}</span><div class="txt"><div class="h">${h}</div>${d?`<div class="d">${d}</div>`:""}</div>`;el.appendChild(x);};
+  li("flag","▲",`Başlangıç: ${entrance.name}`,`${mall.name} · ${mall.floorLabels[entrance.floor]||("KAT "+entrance.floor)}`);
+  let cur={floor:entrance.floor,pos:entrance.pos};
+  plan.order.forEach((s,i)=>{
+    if(s.floor!==cur.floor){
+      const dir=s.floor>cur.floor?"çık":"in";
+      const diff=Math.abs(s.floor-cur.floor);
+      li("esc","≋",`Yürüyen merdivenle ${diff} kat ${dir}`,`${mall.floorLabels[cur.floor]||("KAT "+cur.floor)} → ${mall.floorLabels[s.floor]||("KAT "+s.floor)}`);
+    }
+    // bu mağaza için en iyi eşleşen ürünü bul
+    const best=state.matches.filter(m=>m.storeId===s.storeId).sort((a,b)=>b.score-a.score)[0];
+    const prodLine = best ? `${best.name}${best.price?` · ${tl(best.price)}`:""} · ${stars(best.quality)} · %${best.score} eşleşme` : "";
+    li("", i+1, `${s.storeName} <span style="color:var(--route-ink);font-weight:600">${mall.floorLabels[s.floor]||("KAT "+s.floor)}</span>`, prodLine);
+    cur={floor:s.floor,pos:s.pos};
+  });
+  if(!plan.order.length) li("flag","–","Bu AVM'de eşleşen mağaza yok","Soldaki listeden başka bir AVM seç.");
+}
+
+/* ---------- 8. Akış ---------- */
+function runSearch(raw){
+  const q=parseQuery(raw);
+  state.q=q;
+  state.matches=buildMatches(q);
+  state.mallId=null;
+  state.entranceIdx=0;
+  renderInterp(q);
+  renderResults();
+  renderMalls();
+  renderRoutePanel();
+}
+
+/* örnek arama çipleri */
+const EXAMPLES=[
+  "smokin için uygun bir ayakkabı arıyorum",
+  "düğüne uygun uygun fiyatlı klasik ayakkabı",
+  "ofis için kaliteli deri ayakkabı",
+  "spor için koşu ayakkabısı",
+  "3000 TL altında erkek klasik ayakkabı",
+  "smokine papyon lazım"
+];
+function renderChips(){
+  const el=$("chips"); el.innerHTML="";
+  EXAMPLES.forEach(ex=>{
+    const b=document.createElement("button");
+    b.className="chip"; b.type="button";
+    b.innerHTML=ex.replace(/(smokin|düğün|ofis|spor|klasik|papyon)/i,'<b>$1</b>');
+    b.onclick=()=>{$("q").value=ex;runSearch(ex);window.scrollTo({top:0,behavior:"smooth"});};
+    el.appendChild(b);
+  });
+}
+
+/* tema */
+(function initTheme(){
+  let saved=null; try{saved=localStorage.getItem("avm-theme");}catch(e){}
+  if(saved) document.documentElement.setAttribute("data-theme",saved);
+  const btn=$("themeBtn");
+  btn.onclick=()=>{
+    const cur=document.documentElement.getAttribute("data-theme");
+    const prefersDark=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const next=(cur? (cur==="dark"?"light":"dark") : (prefersDark?"light":"dark"));
+    document.documentElement.setAttribute("data-theme",next);
+    try{localStorage.setItem("avm-theme",next);}catch(e){}
+  };
+})();
+
+/* olaylar */
+$("goBtn").onclick=()=>runSearch($("q").value.trim()||EXAMPLES[0]);
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter")runSearch($("q").value.trim()||EXAMPLES[0]);});
+$("sortSel").onchange=e=>{state.sort=e.target.value;renderResults();};
+
+/* başlangıç */
+renderChips();
+$("q").value=EXAMPLES[0];
+runSearch(EXAMPLES[0]);
+</script>
+</body>
+</html>
