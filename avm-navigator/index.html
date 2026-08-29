@@ -229,6 +229,16 @@ select,.mini{
 /* floor map */
 .mapwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
 .mapwrap svg{display:block;width:100%;height:auto}
+.maptools{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:2px 0 8px}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:3px;gap:2px}
+.seg-b{border:0;background:transparent;color:var(--muted);font-family:var(--font-disp);font-weight:600;font-size:12px;letter-spacing:.05em;text-transform:uppercase;padding:6px 13px;border-radius:7px;cursor:pointer}
+.seg-b:hover{color:var(--ink)}
+.seg-b.active{background:var(--route);color:#fff}
+.maphint{font-size:11.5px;color:var(--muted)}
+#map3d{width:100%;height:380px;position:relative;cursor:grab}
+#map3d:active{cursor:grabbing}
+#map3d canvas{display:block;border-radius:12px}
+#map3d .empty{padding:60px 10px}
 .entrance-row{display:flex;align-items:center;gap:8px;margin:12px 0 8px;flex-wrap:wrap}
 
 /* steps */
@@ -333,7 +343,17 @@ a{color:var(--route-ink)}
           <select id="entranceSel" aria-label="Giriş noktası"></select>
         </div>
 
-        <div class="mapwrap"><div id="map"></div></div>
+        <div class="maptools">
+          <div class="seg" role="tablist" aria-label="Harita görünümü">
+            <button class="seg-b active" id="mode2d" role="tab" aria-selected="true" type="button">2B Plan</button>
+            <button class="seg-b" id="mode3d" role="tab" aria-selected="false" type="button">3B Görünüm</button>
+          </div>
+          <span class="maphint" id="maphint" hidden>sürükle: döndür · tekerlek: yakınlaştır</span>
+        </div>
+        <div class="mapwrap">
+          <div id="map"></div>
+          <div id="map3d" hidden></div>
+        </div>
         <div class="legend" id="legend"></div>
 
         <ol class="steps" id="steps"></ol>
@@ -345,10 +365,11 @@ a{color:var(--route-ink)}
 
   <footer class="foot">
     <span>AVM Rota · erken prototip</span>
-    <span class="mono">İstinye Park · Zorlu Center · İstanbul Cevahir</span>
+    <span class="mono">İstinye Park · Zorlu Center · Cevahir · Aqua Florya</span>
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* =====================================================================
    AVM ROTA — prototype logic
@@ -467,6 +488,47 @@ const MALLS = [
       {id:"ce-koton",name:"Koton",floor:1,pos:25,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
       {id:"ce-mavi",name:"Mavi",floor:1,pos:78,cats:["gomlek","ayakkabi"],tier:1,quality:3,tags:["casual"]},
       {id:"ce-watsons",name:"Watsons",floor:0,pos:60,cats:["parfum"],tier:1,quality:3,tags:[]}
+    ]
+  },
+  {
+    id:"aqua", name:"Aqua Florya", area:"Florya, İstanbul",
+    floorLabels:{3:"KAT 3",2:"KAT 2",1:"KAT 1",0:"ZEMİN"},
+    entrances:[{name:"Ana Giriş (Zemin)",floor:0,pos:8},{name:"Sahil Girişi (Zemin)",floor:0,pos:92}],
+    stores:[
+      {id:"aq-network",name:"Network",floor:1,pos:14,cats:["takim","gomlek","ayakkabi"],tier:2,quality:4,tags:["business","formal"],
+        products:[P("Klasik Deri Ayakkabı",4290,2,4,["formal","business"],"erkek")]},
+      {id:"aq-damat",name:"Damat Tween",floor:1,pos:22,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takım Elbise",9750,2,4,["formal"],"erkek")]},
+      {id:"aq-ninewest",name:"Nine West",floor:1,pos:30,cats:["ayakkabi","canta"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Rugan Topuklu Ayakkabı",2799,2,3,["formal","business"],"kadin")]},
+      {id:"aq-derimod",name:"Derimod",floor:1,pos:40,cats:["ayakkabi","canta","kemer"],tier:2,quality:4,tags:["formal","business","casual"],
+        products:[P("Hakiki Deri Oxford",3499,2,4,["formal","business"],"erkek"),P("Deri Loafer",2999,2,4,["business","casual"],"erkek")]},
+      {id:"aq-inci",name:"İnci",floor:1,pos:50,cats:["ayakkabi","canta"],tier:1,quality:3,tags:["formal","business","casual"],
+        products:[P("Deri Klasik Ayakkabı",2499,1,3,["formal","business"],"erkek")]},
+      {id:"aq-kemal",name:"Kemal Tanca",floor:1,pos:59,cats:["ayakkabi"],tier:2,quality:3,tags:["formal","business"],
+        products:[P("Klasik Bağcıklı Ayakkabı",2799,2,3,["formal","business"],"erkek")]},
+      {id:"aq-divarese",name:"Divarese",floor:1,pos:68,cats:["ayakkabi"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Klasik Deri Ayakkabı",3899,2,4,["formal","business"],"erkek")]},
+      {id:"aq-koton",name:"Koton",floor:1,pos:80,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
+      {id:"aq-boyner",name:"Boyner",floor:2,pos:28,cats:["ayakkabi","gomlek","takim","parfum"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Fabrika Klasik Ayakkabı",2299,1,3,["formal","business"],"erkek")]},
+      {id:"aq-sneaks",name:"Sneaks Up",floor:2,pos:45,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"],
+        products:[P("Nike / Vans Sneaker",3200,2,3,["sport","casual"],"unisex")]},
+      {id:"aq-nike",name:"Nike",floor:2,pos:54,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Revolution Koşu Ayakkabısı",2999,2,4,["sport"],"unisex")]},
+      {id:"aq-adidas",name:"adidas",floor:2,pos:62,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Ultraboost",5499,2,4,["sport"],"unisex")]},
+      {id:"aq-mavi",name:"Mavi",floor:2,pos:74,cats:["gomlek","ayakkabi"],tier:1,quality:3,tags:["casual"]},
+      {id:"aq-zara",name:"Zara",floor:0,pos:26,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:3,tags:["casual","business"],
+        products:[P("Klasik Bağcıklı Ayakkabı",1799,1,3,["business","formal"],"erkek")]},
+      {id:"aq-lcw",name:"LC Waikiki",floor:0,pos:36,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:2,tags:["casual","business"],
+        products:[P("Klasik Ayakkabı",899,1,2,["business","formal"],"erkek")]},
+      {id:"aq-flo",name:"Flo",floor:0,pos:46,cats:["ayakkabi"],tier:1,quality:3,tags:["casual","sport","business"],
+        products:[P("Dockers Klasik Ayakkabı",1799,1,3,["business","formal"],"erkek"),P("Kinetix Sneaker",999,1,2,["casual","sport"],"unisex")]},
+      {id:"aq-mango",name:"Mango",floor:0,pos:56,cats:["elbise","gomlek","canta"],tier:1,quality:3,tags:["casual","business"]},
+      {id:"aq-watsons",name:"Watsons",floor:0,pos:66,cats:["parfum"],tier:1,quality:3,tags:[]},
+      {id:"aq-defacto",name:"DeFacto",floor:3,pos:40,cats:["gomlek","takim","ayakkabi"],tier:1,quality:2,tags:["casual","business"]},
+      {id:"aq-mediamarkt",name:"MediaMarkt",floor:3,pos:60,cats:[],tier:2,quality:3,tags:[]}
     ]
   }
 ];
@@ -621,7 +683,7 @@ function planRoute(mall, storeList, entrance){
 }
 
 /* ---------- 6. State ---------- */
-let state={q:null,matches:[],sort:"score",mallId:null,entranceIdx:0};
+let state={q:null,matches:[],sort:"score",mallId:null,entranceIdx:0,mapMode:"2d",_mall:null,_order:[],_entrance:null};
 
 /* ---------- 7. Render ---------- */
 const $=id=>document.getElementById(id);
@@ -754,6 +816,8 @@ function renderRoutePanel(){
     <div class="stat"><div class="v">~${plan.mins}<small> dk</small></div><div class="k">Süre</div></div>`;
 
   $("map").innerHTML=buildMap(mall,plan.order,entrance);
+  state._mall=mall; state._order=plan.order; state._entrance=entrance;
+  applyMapMode();
   $("legend").innerHTML=`
     <span><i class="sw" style="background:var(--route);border-color:var(--route)"></i> Rota / durak</span>
     <span><i class="sw" style="background:var(--match-soft);border-color:var(--match)"></i> Eşleşen mağaza</span>
@@ -761,6 +825,24 @@ function renderRoutePanel(){
     <span><svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:-2px"><path d="M4 20 L10 20 L20 6" stroke="var(--muted)" stroke-width="2" fill="none"/></svg> Yürüyen merdiven</span>`;
 
   renderSteps(mall,plan,entrance);
+}
+
+/* ---- 2B / 3B mod anahtarı ---- */
+function applyMapMode(){
+  const is3d = state.mapMode==="3d";
+  $("mode2d").classList.toggle("active",!is3d);
+  $("mode3d").classList.toggle("active",is3d);
+  $("mode2d").setAttribute("aria-selected",String(!is3d));
+  $("mode3d").setAttribute("aria-selected",String(is3d));
+  $("map").hidden = is3d;
+  $("maphint").hidden = !is3d;
+  if(is3d){
+    const ok = VIEW3D.build(state._mall, state._order, state._entrance);
+    if(ok){ VIEW3D.show(); }
+    else { $("map3d").hidden=false; $("map3d").innerHTML='<div class="empty">3B görünüm yüklenemedi — three.js kütüphanesine erişilemedi (çevrimdışı olabilirsiniz).</div>'; }
+  } else {
+    VIEW3D.hide();
+  }
 }
 
 /* ---- SVG kat planı ---- */
@@ -847,6 +929,114 @@ function buildMap(mall,order,entrance){
   return svg;
 }
 
+/* ---- 3B görünüm (three.js) — katlar üst üste dilim, koridor boyunca rota ---- */
+const VIEW3D = {
+  ready:false, visible:false, built:false, raf:0, drag:false,
+  az:0.72, pol:1.02, dist:150, lx:0, ly:0,
+  init(){
+    if(this.ready) return true;
+    if(typeof THREE==="undefined") return false;
+    const cont=$("map3d"); cont.innerHTML="";
+    this.renderer=new THREE.WebGLRenderer({antialias:true, alpha:true});
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+    cont.appendChild(this.renderer.domElement);
+    this.scene=new THREE.Scene();
+    this.camera=new THREE.PerspectiveCamera(45, 1.8, 1, 3000);
+    this.group=new THREE.Group(); this.scene.add(this.group);
+    this.target=new THREE.Vector3(0,0,0);
+    this.scene.add(new THREE.AmbientLight(0xffffff,0.9));
+    const d1=new THREE.DirectionalLight(0xffffff,0.75); d1.position.set(60,120,90); this.scene.add(d1);
+    const d2=new THREE.DirectionalLight(0xffffff,0.28); d2.position.set(-70,40,-60); this.scene.add(d2);
+    const el=this.renderer.domElement; el.style.touchAction="none"; el.style.width="100%"; el.style.height="100%";
+    el.addEventListener("pointerdown",e=>{this.drag=true;this.lx=e.clientX;this.ly=e.clientY;try{el.setPointerCapture(e.pointerId);}catch(_){}});
+    el.addEventListener("pointermove",e=>{ if(!this.drag)return; const dx=e.clientX-this.lx, dy=e.clientY-this.ly; this.lx=e.clientX; this.ly=e.clientY; this.az-=dx*0.01; this.pol=Math.max(0.18,Math.min(1.45,this.pol-dy*0.008)); });
+    const stop=()=>{this.drag=false;}; el.addEventListener("pointerup",stop); el.addEventListener("pointercancel",stop); el.addEventListener("pointerleave",stop);
+    el.addEventListener("wheel",e=>{e.preventDefault(); this.dist=Math.max(60,Math.min(360,this.dist*(1+Math.sign(e.deltaY)*0.09)));},{passive:false});
+    this.ready=true; return true;
+  },
+  col(v){ const c=getComputedStyle(document.documentElement).getPropertyValue(v).trim(); return new THREE.Color(c||"#888888"); },
+  clearGroup(){ const g=this.group; if(!g) return; while(g.children.length){ const m=g.children.pop(); if(m.geometry)m.geometry.dispose(); const mats=m.material?(Array.isArray(m.material)?m.material:[m.material]):[]; mats.forEach(x=>{ if(x.map)x.map.dispose(); if(x.dispose)x.dispose(); }); } },
+  label(text,opt){
+    opt=opt||{}; const fs=opt.fs||38, pad=opt.pad!=null?opt.pad:16, bold=opt.bold!==false;
+    const cv=document.createElement("canvas"), ctx=cv.getContext("2d");
+    const font=`${bold?"700 ":""}${fs}px 'Barlow Semi Condensed', Arial, sans-serif`;
+    ctx.font=font; const tw=Math.ceil(ctx.measureText(text).width);
+    let W,H; if(opt.circle){ W=H=fs+pad*2; } else { W=tw+pad*2; H=fs+pad; }
+    cv.width=W; cv.height=H; ctx.font=font; ctx.textAlign="center"; ctx.textBaseline="middle";
+    if(opt.bg){ ctx.fillStyle=opt.bg; if(opt.circle){ ctx.beginPath(); ctx.arc(W/2,H/2,W/2-1,0,Math.PI*2); ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle="rgba(255,255,255,.85)"; ctx.stroke(); } else { const r=12,x=1,y=1,w=W-2,h=H-2; ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); ctx.fill(); } }
+    ctx.fillStyle=opt.fg||"#ffffff"; ctx.fillText(text,W/2,H/2+1);
+    const tex=new THREE.CanvasTexture(cv); tex.anisotropy=4;
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false}));
+    const sc=0.062; sp.scale.set(W*sc,H*sc,1); return sp;
+  },
+  build(mall,order,entrance){
+    if(!this.init()) return false;
+    if(!mall){ return true; }
+    this.clearGroup();
+    const floors=floorsOf(mall).slice().sort((a,b)=>a-b); // en alt kat = altta
+    const GAP=17, SLAB=1.4, SW=128, SD=36;
+    const yOf=l=>floors.indexOf(l)*GAP, px=p=>(p-50)*1.18, escX=0;
+    const rY=l=>yOf(l)+SLAB/2+1.7;
+    const inOrder={}; order.forEach((s,i)=>inOrder[s.storeId]=i+1);
+    const cSurf=this.col("--surface"), cLine=this.col("--line-strong"), cRoute=this.col("--route"),
+          cMatch=this.col("--match"), cMuted=this.col("--muted"), cInk=this.col("--ink");
+    const hexRoute="#"+cRoute.getHexString(), hexMatch="#"+cMatch.getHexString(), hexMuted="#"+cMuted.getHexString();
+    // kat dilimleri + etiket
+    floors.forEach(l=>{
+      const y=yOf(l);
+      const geo=new THREE.BoxGeometry(SW,SLAB,SD);
+      const slab=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:cSurf,transparent:true,opacity:0.5,roughness:0.95}));
+      slab.position.set(0,y,0); this.group.add(slab);
+      const edg=new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({color:cLine,transparent:true,opacity:0.55}));
+      edg.position.set(0,y,0); this.group.add(edg);
+      const lab=this.label(mall.floorLabels[l]||("KAT "+l),{fg:hexMuted,fs:40}); lab.position.set(-SW/2-9,y+3.5,SD/2-2); this.group.add(lab);
+    });
+    // mağaza blokları (koridorun iki yanı)
+    const meta={};
+    floors.forEach(l=>{ mall.stores.filter(s=>s.floor===l).sort((a,b)=>a.pos-b.pos)
+      .forEach((s,i)=>{ meta[s.id]={x:px(s.pos), y:yOf(l), z:(i%2===0?9.5:-9.5)}; }); });
+    mall.stores.forEach(s=>{
+      const m=meta[s.id]; if(!m) return; const on=!!inOrder[s.id];
+      const w=Math.min(17,Math.max(7,s.name.length*0.95)), h=on?6:4, dp=6.5;
+      const box=new THREE.Mesh(new THREE.BoxGeometry(w,h,dp),
+        new THREE.MeshStandardMaterial({color:on?cMatch:cSurf, emissive:on?cMatch:new THREE.Color(0x000000), emissiveIntensity:on?0.22:0, transparent:true, opacity:on?0.97:0.5, roughness:0.6}));
+      box.position.set(m.x, m.y+SLAB/2+h/2, m.z); this.group.add(box);
+      if(on){ const lb=this.label(s.name,{bg:hexMatch,fg:"#ffffff",fs:30}); lb.position.set(m.x, m.y+SLAB/2+h+3.4, m.z); this.group.add(lb); }
+    });
+    // rota (koridor boyunca, kat değişimi yürüyen merdivende)
+    const seq=[{x:px(entrance.pos),l:entrance.floor}, ...order.map(s=>({x:px(s.pos),l:s.floor}))];
+    const pts=[];
+    for(let i=0;i<seq.length;i++){ const a=seq[i];
+      if(i===0){ pts.push(new THREE.Vector3(a.x,rY(a.l),0)); continue; }
+      const p=seq[i-1];
+      if(p.l!==a.l){ pts.push(new THREE.Vector3(escX,rY(p.l),0)); pts.push(new THREE.Vector3(escX,rY(a.l),0)); }
+      pts.push(new THREE.Vector3(a.x,rY(a.l),0));
+    }
+    if(pts.length>=2){
+      const curve=new THREE.CatmullRomCurve3(pts,false,"catmullrom",0.05);
+      const tube=new THREE.TubeGeometry(curve, Math.max(24,pts.length*10), 0.62, 10, false);
+      this.group.add(new THREE.Mesh(tube, new THREE.MeshStandardMaterial({color:cRoute, emissive:cRoute, emissiveIntensity:0.45, roughness:0.35})));
+    }
+    // giriş işareti
+    { const e=seq[0]; const s=new THREE.Mesh(new THREE.SphereGeometry(2.3,18,18), new THREE.MeshStandardMaterial({color:cInk})); s.position.set(e.x,rY(e.l),0); this.group.add(s); }
+    // numaralı duraklar
+    order.forEach((s,i)=>{ const m=meta[s.storeId]; if(!m) return;
+      const disc=new THREE.Mesh(new THREE.CylinderGeometry(1.5,1.5,0.7,22), new THREE.MeshStandardMaterial({color:cRoute, emissive:cRoute, emissiveIntensity:0.35}));
+      disc.position.set(m.x,rY(s.floor),0); this.group.add(disc);
+      const lb=this.label(String(i+1),{bg:hexRoute,fg:"#ffffff",fs:46,circle:true}); lb.position.set(m.x,rY(s.floor)+3.4,0); this.group.add(lb);
+    });
+    this.target.set(0,(floors.length-1)*GAP/2,0);
+    this.dist=Math.max(95, 64+floors.length*16);
+    this.built=true; return true;
+  },
+  frame(){ const t=this.target, sp=Math.sin(this.pol); this.camera.position.set(t.x+this.dist*sp*Math.sin(this.az), t.y+this.dist*Math.cos(this.pol), t.z+this.dist*sp*Math.cos(this.az)); this.camera.lookAt(t); },
+  resize(){ if(!this.ready) return; const c=$("map3d"); const w=c.clientWidth||600, h=c.clientHeight||380; this.renderer.setSize(w,h,false); this.camera.aspect=w/h; this.camera.updateProjectionMatrix(); },
+  loop(){ if(!this.visible) return; if(!this.drag) this.az+=0.0018; this.frame(); this.renderer.render(this.scene,this.camera); this.raf=requestAnimationFrame(()=>this.loop()); },
+  show(){ this.visible=true; $("map3d").hidden=false; this.resize(); cancelAnimationFrame(this.raf); this.loop(); },
+  hide(){ this.visible=false; cancelAnimationFrame(this.raf); $("map3d").hidden=true; }
+};
+window.addEventListener("resize",()=>{ if(VIEW3D.visible) VIEW3D.resize(); });
+
 function renderSteps(mall,plan,entrance){
   const el=$("steps"); el.innerHTML="";
   const li=(cls,num,h,d)=>{const x=document.createElement("li");x.innerHTML=`<span class="num ${cls}">${num}</span><div class="txt"><div class="h">${h}</div>${d?`<div class="d">${d}</div>`:""}</div>`;el.appendChild(x);};
@@ -911,6 +1101,7 @@ function renderChips(){
     const next=(cur? (cur==="dark"?"light":"dark") : (prefersDark?"light":"dark"));
     document.documentElement.setAttribute("data-theme",next);
     try{localStorage.setItem("avm-theme",next);}catch(e){}
+    if(state.mapMode==="3d") applyMapMode(); // 3B renklerini temaya göre yenile
   };
 })();
 
@@ -918,6 +1109,8 @@ function renderChips(){
 $("goBtn").onclick=()=>runSearch($("q").value.trim()||EXAMPLES[0]);
 $("q").addEventListener("keydown",e=>{if(e.key==="Enter")runSearch($("q").value.trim()||EXAMPLES[0]);});
 $("sortSel").onchange=e=>{state.sort=e.target.value;renderResults();};
+$("mode2d").onclick=()=>{ if(state.mapMode!=="2d"){ state.mapMode="2d"; applyMapMode(); } };
+$("mode3d").onclick=()=>{ if(state.mapMode!=="3d"){ state.mapMode="3d"; applyMapMode(); } };
 
 /* başlangıç */
 renderChips();
