@@ -16,9 +16,27 @@ Tek dosyalık, kurulum gerektirmeyen bir web uygulamasıdır. Sadece aç:
 avm-navigator/index.html   →  tarayıcıda çift tıkla
 ```
 
-Harici bağımlılık yok (yalnızca Google Fonts internetten yüklenir; erişilemezse
-sistem fontlarına düşer). Canlı önizleme (Artifact) bağlantısı sohbet üzerinden
-paylaşıldı.
+Harici bağımlılık yok (yalnızca Google Fonts ve 3B için three.js internetten
+yüklenir; erişilemezse sistem fontlarına / 2B görünüme düşer). Canlı önizleme
+(Artifact) bağlantısı sohbet üzerinden paylaşıldı.
+
+Tasarım: sade, minimalist ve şık bir yön — sıcak nötr zemin, ince ayraç çizgileri,
+gölgesiz kartlar, tek dingin vurgu rengi; açık/koyu tema desteği.
+
+## Telefonda çalıştırma (PWA)
+
+Uygulama **kurulabilir bir PWA**'dır (`manifest.webmanifest` + `sw.js` + `icon.svg`).
+HTTPS bir adreste (ör. GitHub Pages) açtığında telefon tarayıcısından
+**"Ana ekrana ekle"** dersen, tam ekran, kendi ikonlu bir app gibi çalışır ve
+service worker sayesinde ilk açılıştan sonra **çevrimdışı** da çalışır.
+
+- Telefonda **şimdi** denemek için: canlı önizleme (Artifact) linkini telefon
+  tarayıcısında aç → mobil düzen otomatik. Kurulabilir PWA olarak eklemek için
+  kendi HTTPS adresinde (GitHub Pages) yayınlaman gerekir (`file://` ve gömülü
+  önizlemede service worker kaydı devre dışıdır).
+- **Uygulama mağazası** (App Store / Google Play) sürümü istersen: bu PWA'yı
+  Capacitor ile sarmalayıp native bir kabuk üretilir (Xcode / Android Studio gerekir).
+- iOS için `apple-touch-icon` prod'da PNG olmalı; şu an SVG ikon kullanılıyor.
 
 ## Ne yapıyor?
 
@@ -94,6 +112,9 @@ için birkaç yol var:
 
 ```
 avm-navigator/
-├── index.html   # tek dosyalık uygulama (veri + mantık + arayüz)
-└── README.md    # bu dosya
+├── index.html            # tek dosyalık uygulama (veri + mantık + arayüz + 2B/3B harita)
+├── manifest.webmanifest  # PWA manifesti (ad, ikon, tema rengi, standalone)
+├── sw.js                 # service worker (app shell cache, çevrimdışı)
+├── icon.svg              # uygulama ikonu (maskable)
+└── README.md             # bu dosya
 ```

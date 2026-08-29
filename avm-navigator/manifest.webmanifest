@@ -1,0 +1,16 @@
+{
+  "name": "AVM Rota",
+  "short_name": "AVM Rota",
+  "description": "AVM'ye gitmeden ne alacağını yaz; ürünleri fiyat ve kaliteye göre sıralayıp seni doğru katlara en kısa yürüyüş rotasıyla yönlendirir.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#FBFAF8",
+  "theme_color": "#DA5A3C",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

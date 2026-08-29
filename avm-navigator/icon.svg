@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="AVM Rota">
+  <rect width="512" height="512" fill="#DA5A3C"/>
+  <g transform="translate(256 256) scale(15) translate(-12 -11)">
+    <path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" fill="#ffffff"/>
+    <circle cx="12" cy="10" r="2.6" fill="#DA5A3C"/>
+  </g>
+</svg>
