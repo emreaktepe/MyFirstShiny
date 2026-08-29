@@ -23,6 +23,10 @@ yüklenir; erişilemezse sistem fontlarına / 2B görünüme düşer). Canlı ö
 Tasarım: sade, minimalist ve şık bir yön — sıcak nötr zemin, ince ayraç çizgileri,
 gölgesiz kartlar, tek dingin vurgu rengi; açık/koyu tema desteği.
 
+**Mobil:** dar ekranda akan tek sayfa yerine **alt sekme çubuğu** (Ara · Ürünler ·
+Rota) devreye girer; her sekme tek bir bölümü gösterir, app hissi verir. Masaüstünde
+iki sütun düzeni korunur.
+
 ## Telefonda çalıştırma (PWA)
 
 Uygulama **kurulabilir bir PWA**'dır (`manifest.webmanifest` + `sw.js` + `icon.svg`).
@@ -66,19 +70,28 @@ service worker sayesinde ilk açılıştan sonra **çevrimdışı** da çalış�
 
 Gerçek İstanbul AVM'lerinin **kat yapısı ve marka karması** temel alınmıştır:
 
-| AVM | Konum | Katlar |
-|-----|-------|--------|
-| İstinye Park | Sarıyer | Zemin · Kat 1 · Kat 2 |
-| Zorlu Center | Beşiktaş | Metro (−2) · B1 · Zemin · Teras |
-| İstanbul Cevahir | Şişli | B1 · Zemin · Kat 1–4 |
-| Aqua Florya | Florya (Bakırköy) | Zemin · Kat 1 · Kat 2 · Kat 3 |
+| AVM | Konum | Katlar | Mağaza |
+|-----|-------|--------|--------|
+| **Aqua Florya** ⭐ (bayrak / test AVM'si) | Florya (Bakırköy) | Zemin · Kat 1 · Kat 2 · Kat 3 | ~66 (tüm katlar) |
+| İstinye Park | Sarıyer | Zemin · Kat 1 · Kat 2 | ~13 |
+| Zorlu Center | Beşiktaş | Metro (−2) · B1 · Zemin · Teras | ~11 |
+| İstanbul Cevahir | Şişli | B1 · Zemin · Kat 1–4 | ~14 |
+
+**Aqua Florya**, saha testleri için **bayrak AVM** olarak seçildi: 4 katın tümünde
+moda, ayakkabı, resmi giyim, spor, çocuk, kozmetik, kuyum/saat, elektronik, ev,
+kitap, market ve yeme-içme kategorilerinde **~66 mağazalık** genişletilmiş bir
+veritabanıyla dolduruldu. Uygulama açılışta ve aramada **varsayılan olarak Aqua
+Florya'yı** seçer.
 
 ## Önemli not (veri)
 
-Bu bir **prototiptir**. Mağaza listeleri ve marka/kat yerleşimi, gerçek AVM
-web sitelerindeki mağaza rehberleri temel alınarak **kürasyonla** oluşturulmuştur;
-mağazaların koridor içindeki tam koordinatları ve ürün fiyatları **temsilîdir**.
-Amaç, yorumlama → sıralama → rota akışını uçtan uca göstermektir.
+Bu bir **prototiptir**. Aqua Florya mağaza listesi, ~160 mağazalık gerçek AVM'nin
+tipik zincir karması ve doğrulanan birkaç marka (ör. Sneaks Up, Altınbaş, Apple)
+temel alınarak **kürasyonla** genişletilmiştir; mağazaların **tam kat/koridor
+yerleşimi ve fiyatlar temsilîdir** (resmî mağaza rehberine ağ politikası izin
+vermediği için canlı çekilemedi). Saha testinde gerçekle farklılık görürsen
+söyle, veritabanını ona göre düzeltelim. Amaç, yorumlama → sıralama → rota
+akışını uçtan uca göstermektir.
 
 Üründe sıradaki adım, kat planlarını AVM'lerin resmî yönlendirme/harita
 servislerinden (veya API'lerinden) **canlı** çekmek ve gerçek ürün kataloglarına
@@ -94,17 +107,28 @@ servislerinden (veya API'lerinden) **canlı** çekmek ve gerçek ürün katalogl
 
 ## Yayına alma (deploy)
 
-Bu uygulama **tek statik HTML dosyasıdır** — sunucu/backend yoktur. Yayınlamak
-için birkaç yol var:
+Bu uygulama **tek statik HTML dosyasıdır** — sunucu/backend yoktur.
 
-- **Claude Artifact** — en hızlısı. Sohbette yayınlanan Artifact linki zaten
-  canlıdır; sayfadaki paylaş menüsünden başkalarıyla paylaşabilirsin. Ayrı bir
-  cloud repo **gerekmez**.
-- **Kendi alan adın / kalıcı hosting** — statik dosya olduğu için herhangi bir
-  statik hostta yayınlanır: GitHub Pages (bu repodan doğrudan), Netlify, Vercel,
-  Cloudflare Pages. Bunların çoğu bir Git reposuna bağlanır; yani "cloud repo"
-  yalnızca **kendi hostinginde** yayınlamak istersen gerekir, Claude üzerinden
-  paylaşmak için değil.
+### GitHub Pages (önerilen, telefona kurulabilir PWA için gerekli)
+
+Kod tarafı hazır (kök `index.html` yönlendirmesi + `.nojekyll`). Pages ayarını
+API'den açamadığım için **tek seferlik şu adımı sen yap** (~20 sn):
+
+1. GitHub'da repo → **Settings → Pages**
+2. **Build and deployment → Source: _Deploy from a branch_**
+3. **Branch:** `claude/avm-navigation-app-prototype-77tk26` · **Folder:** `/ (root)` → **Save**
+4. 1–2 dk sonra yayında:
+   - `https://emreaktepe.github.io/MyFirstShiny/` (otomatik uygulamaya yönlenir)
+   - `https://emreaktepe.github.io/MyFirstShiny/avm-navigator/` (doğrudan)
+
+Telefonda o adresi aç → tarayıcı menüsü → **"Ana ekrana ekle"** → app gibi çalışır.
+(İstersen bu dalı `main`'e merge edip Pages'i `main`'den de yayınlayabilirsin.)
+
+### Diğer seçenekler
+
+- **Claude Artifact** — en hızlısı, repo gerekmez; sohbetteki link zaten canlı,
+  paylaş menüsünden paylaşılır (ancak service worker/PWA kurulumu iframe'de pasif).
+- **Netlify / Vercel / Cloudflare Pages** — repoyu bağla, kök dizini yayınla.
 
 > 3B mod three.js'i CDN'den çektiği için yayında **internet** gerektirir.
 

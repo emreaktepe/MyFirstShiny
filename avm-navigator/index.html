@@ -221,6 +221,8 @@ select:hover,.mini:hover{border-color:var(--ink-2)}
 .mall .cnt{margin-left:auto;text-align:right}
 .mall .cnt b{font-family:var(--font-mono);font-size:15px;font-weight:600;color:var(--ink)}
 .mall .cnt span{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase}
+.badge{display:inline-block;vertical-align:middle;margin-left:7px;font-family:var(--font-disp);font-weight:700;font-size:9px;letter-spacing:.1em;color:var(--route);background:var(--match-soft);border:1px solid color-mix(in srgb,var(--route) 30%,var(--line));border-radius:5px;padding:2px 6px;text-transform:uppercase}
+.mall.sel .badge{background:color-mix(in srgb,var(--route) 12%,var(--surface))}
 
 /* route summary — one segmented bar, no boxes */
 .rsum{display:flex;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
@@ -271,6 +273,29 @@ select:hover,.mini:hover{border-color:var(--ink-2)}
 .note b{color:var(--ink-2);font-weight:600}
 footer.foot{margin-top:40px;padding-top:20px;border-top:1px solid var(--line);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
 a{color:var(--route-ink)}
+
+/* ---------- Mobil alt sekme çubuğu ---------- */
+.tabbar{display:none}
+@media (max-width:940px){
+  .tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:40;
+    background:color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter:blur(12px);border-top:1px solid var(--line);
+    padding:6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .tab-b{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;color:var(--muted);font-family:var(--font-disp);font-weight:600;font-size:11px;letter-spacing:.02em;cursor:pointer;padding:7px 4px;border-radius:10px}
+  .tab-b svg{width:22px;height:22px}
+  .tab-b b{color:var(--route);font-weight:700;margin-left:2px}
+  .tab-b.active{color:var(--route)}
+  .wrap{padding-bottom:88px}
+  .hero{padding:26px 0 4px}
+  .grid{margin-top:18px}
+  .panel{border-radius:14px}
+  /* aktif sekmeye göre bölüm görünürlüğü */
+  body[data-tab="ara"] #panelResults, body[data-tab="ara"] #panelRoute,
+  body[data-tab="urunler"] .hero, body[data-tab="urunler"] #panelRoute,
+  body[data-tab="rota"] .hero, body[data-tab="rota"] #panelResults{display:none}
+}
 </style>
 <!-- PWA (telefonda "Ana ekrana ekle" ile app gibi çalışması için; yalnızca HTTPS hosting'de devreye girer) -->
 <link rel="manifest" href="manifest.webmanifest">
@@ -321,7 +346,7 @@ a{color:var(--route-ink)}
 
   <div class="grid">
     <!-- LEFT: interpretation + results -->
-    <section class="panel" aria-label="Sonuçlar">
+    <section class="panel" id="panelResults" aria-label="Sonuçlar">
       <div class="panel-h">
         <div class="t">Eşleşen ürünler <b id="resCount"></b></div>
         <div class="control">
@@ -341,7 +366,7 @@ a{color:var(--route-ink)}
     </section>
 
     <!-- RIGHT: mall + route -->
-    <section class="panel" aria-label="Rota">
+    <section class="panel" id="panelRoute" aria-label="Rota">
       <div class="panel-h">
         <div class="t">Rota <b>planı</b></div>
         <div class="control"><span id="routeMallName" class="mono" style="color:var(--ink-2)"></span></div>
@@ -382,6 +407,22 @@ a{color:var(--route-ink)}
   </footer>
 </div>
 
+<!-- Mobil alt sekme çubuğu (yalnızca dar ekranda görünür) -->
+<nav class="tabbar" aria-label="Bölümler">
+  <button class="tab-b" id="tabAra" type="button" data-tab="ara">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.2-3.2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>Ara</span>
+  </button>
+  <button class="tab-b" id="tabUrunler" type="button" data-tab="urunler">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    <span>Ürünler<b id="tabCount"></b></span>
+  </button>
+  <button class="tab-b" id="tabRota" type="button" data-tab="rota">
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="10" r="2.3" fill="currentColor"/></svg>
+    <span>Rota</span>
+  </button>
+</nav>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 /* =====================================================================
@@ -399,7 +440,15 @@ const CATS = {
   kravat:{label:"kravat / papyon", syn:["kravat","papyon","tie","bow tie","fular"]},
   kemer:{label:"kemer", syn:["kemer","belt"]},
   canta:{label:"çanta", syn:["çanta","canta","bag","cüzdan","cuzdan","valiz","evrak çantası"]},
-  parfum:{label:"parfüm / kozmetik", syn:["parfüm","parfum","kozmetik","makyaj","cilt bakım","krem"]}
+  parfum:{label:"parfüm / kozmetik", syn:["parfüm","parfum","kozmetik","makyaj","cilt bakım","cilt bakim","krem","ruj","fondöten","fondoten","maskara"]},
+  spor:{label:"spor giyim / ekipman", syn:["spor giyim","eşofman","esofman","tayt","forma","spor ekipman","spor malzeme","outdoor","kamp","mont","bisiklet"]},
+  cocuk:{label:"çocuk / bebek", syn:["çocuk giyim","cocuk giyim","bebek","bebek giyim","oyuncak","çocuk ayakkabı","bebek arabası"]},
+  elektronik:{label:"elektronik", syn:["elektronik","telefon","bilgisayar","laptop","tablet","kulaklık","kulaklik","televizyon","teknoloji","şarj"]},
+  taki:{label:"takı / mücevher / saat", syn:["takı","taki","mücevher","mucevher","altın","altin","pırlanta","pirlanta","yüzük","yuzuk","kolye","bileklik","küpe","kupe","kol saati","saat","gözlük","gozluk","optik"]},
+  ev:{label:"ev / dekorasyon", syn:["ev tekstil","dekorasyon","nevresim","havlu","mutfak","tabak","mum","ev eşyası","ev esyasi","yastık"]},
+  kitap:{label:"kitap / kırtasiye", syn:["kitap","kırtasiye","kirtasiye","defter","roman","kalem"]},
+  market:{label:"market", syn:["market","süpermarket","supermarket","gıda","gida","bakkal","alışveriş marketi"]},
+  yeme:{label:"yeme-içme", syn:["yemek","restoran","kafe","cafe","kahve","burger","pizza","tatlı","tatli","yeme içme","yeme icme","fast food"]}
 };
 const OCCASIONS = {
   formal:{label:"resmi / smokin", syn:["smokin","damatlık","damatlik","düğün","dugun","nişan","nisan","davet","gece","abiye","balo","mezuniyet","resmi","klasik","takım için","özel gün","kokteyl"]},
@@ -410,7 +459,7 @@ const OCCASIONS = {
 const PRICE_LOW = ["ucuz","uygun fiyat","ekonomik","hesaplı","hesapli","bütçe","butce","kelepir","indirim","cepte"];
 const PRICE_HIGH = ["pahalı","pahali","lüks","luks","premium","üst segment","kaliteli marka","markalı","markali","first class"];
 const QUAL_HIGH = ["kaliteli","dayanıklı","dayanikli","sağlam","saglam","orijinal","hakiki deri","deri","uzun ömür","garantili"];
-const GENDERS = {erkek:["erkek","bay","adam","damat","erkekler"], kadin:["kadın","kadin","bayan","kadınlar","gelin"], cocuk:["çocuk","cocuk","bebek","kız çocuk","erkek çocuk"]};
+const GENDERS = {erkek:["erkek","bay","adam","damat","erkekler"], kadin:["kadın","kadin","bayan","kadınlar","gelin"], cocuk:["çocuk","cocuk","çocuğ","cocug","bebek","kız çocuk","erkek çocuk"]};
 
 /* ---------- 2. AVM verisi ---------- */
 function P(name,price,tier,quality,tags,gender){return {name,price,tier,quality,tags,gender:gender||"unisex"};}
@@ -504,44 +553,107 @@ const MALLS = [
     ]
   },
   {
-    id:"aqua", name:"Aqua Florya", area:"Florya, İstanbul",
+    id:"aqua", name:"Aqua Florya", area:"Florya, İstanbul", flagship:true,
     floorLabels:{3:"KAT 3",2:"KAT 2",1:"KAT 1",0:"ZEMİN"},
-    entrances:[{name:"Ana Giriş (Zemin)",floor:0,pos:8},{name:"Sahil Girişi (Zemin)",floor:0,pos:92}],
+    entrances:[{name:"Ana Giriş (Zemin)",floor:0,pos:8},{name:"Sahil Girişi (Zemin)",floor:0,pos:92},{name:"Otopark Girişi (Kat 3)",floor:3,pos:6}],
     stores:[
-      {id:"aq-network",name:"Network",floor:1,pos:14,cats:["takim","gomlek","ayakkabi"],tier:2,quality:4,tags:["business","formal"],
-        products:[P("Klasik Deri Ayakkabı",4290,2,4,["formal","business"],"erkek")]},
-      {id:"aq-damat",name:"Damat Tween",floor:1,pos:22,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
-        products:[P("Smokin Takım Elbise",9750,2,4,["formal"],"erkek")]},
-      {id:"aq-ninewest",name:"Nine West",floor:1,pos:30,cats:["ayakkabi","canta"],tier:2,quality:3,tags:["business","casual","formal"],
-        products:[P("Rugan Topuklu Ayakkabı",2799,2,3,["formal","business"],"kadin")]},
-      {id:"aq-derimod",name:"Derimod",floor:1,pos:40,cats:["ayakkabi","canta","kemer"],tier:2,quality:4,tags:["formal","business","casual"],
-        products:[P("Hakiki Deri Oxford",3499,2,4,["formal","business"],"erkek"),P("Deri Loafer",2999,2,4,["business","casual"],"erkek")]},
-      {id:"aq-inci",name:"İnci",floor:1,pos:50,cats:["ayakkabi","canta"],tier:1,quality:3,tags:["formal","business","casual"],
-        products:[P("Deri Klasik Ayakkabı",2499,1,3,["formal","business"],"erkek")]},
-      {id:"aq-kemal",name:"Kemal Tanca",floor:1,pos:59,cats:["ayakkabi"],tier:2,quality:3,tags:["formal","business"],
-        products:[P("Klasik Bağcıklı Ayakkabı",2799,2,3,["formal","business"],"erkek")]},
-      {id:"aq-divarese",name:"Divarese",floor:1,pos:68,cats:["ayakkabi"],tier:2,quality:4,tags:["formal","business"],
-        products:[P("Klasik Deri Ayakkabı",3899,2,4,["formal","business"],"erkek")]},
-      {id:"aq-koton",name:"Koton",floor:1,pos:80,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
-      {id:"aq-boyner",name:"Boyner",floor:2,pos:28,cats:["ayakkabi","gomlek","takim","parfum"],tier:2,quality:3,tags:["business","casual","formal"],
-        products:[P("Fabrika Klasik Ayakkabı",2299,1,3,["formal","business"],"erkek")]},
-      {id:"aq-sneaks",name:"Sneaks Up",floor:2,pos:45,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"],
-        products:[P("Nike / Vans Sneaker",3200,2,3,["sport","casual"],"unisex")]},
-      {id:"aq-nike",name:"Nike",floor:2,pos:54,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
-        products:[P("Revolution Koşu Ayakkabısı",2999,2,4,["sport"],"unisex")]},
-      {id:"aq-adidas",name:"adidas",floor:2,pos:62,cats:["ayakkabi"],tier:2,quality:4,tags:["sport","casual"],
-        products:[P("Ultraboost",5499,2,4,["sport"],"unisex")]},
-      {id:"aq-mavi",name:"Mavi",floor:2,pos:74,cats:["gomlek","ayakkabi"],tier:1,quality:3,tags:["casual"]},
-      {id:"aq-zara",name:"Zara",floor:0,pos:26,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:3,tags:["casual","business"],
+      /* ZEMİN — hızlı moda, kozmetik, kuyum, market */
+      {id:"aq-zara",name:"Zara",floor:0,pos:8,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:3,tags:["casual","business"],
         products:[P("Klasik Bağcıklı Ayakkabı",1799,1,3,["business","formal"],"erkek")]},
-      {id:"aq-lcw",name:"LC Waikiki",floor:0,pos:36,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:2,tags:["casual","business"],
-        products:[P("Klasik Ayakkabı",899,1,2,["business","formal"],"erkek")]},
-      {id:"aq-flo",name:"Flo",floor:0,pos:46,cats:["ayakkabi"],tier:1,quality:3,tags:["casual","sport","business"],
+      {id:"aq-bershka",name:"Bershka",floor:0,pos:14,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
+      {id:"aq-pullbear",name:"Pull & Bear",floor:0,pos:20,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
+      {id:"aq-strad",name:"Stradivarius",floor:0,pos:26,cats:["elbise","gomlek"],tier:1,quality:2,tags:["casual"]},
+      {id:"aq-mango",name:"Mango",floor:0,pos:32,cats:["elbise","gomlek","canta"],tier:1,quality:3,tags:["casual","business"]},
+      {id:"aq-massimo",name:"Massimo Dutti",floor:0,pos:38,cats:["gomlek","takim","ayakkabi"],tier:2,quality:4,tags:["business","formal","casual"],
+        products:[P("Deri Klasik Ayakkabı",4290,2,4,["formal","business"],"erkek")]},
+      {id:"aq-oysho",name:"Oysho",floor:0,pos:44,cats:["gomlek"],tier:1,quality:3,tags:["casual"]},
+      {id:"aq-sephora",name:"Sephora",floor:0,pos:50,cats:["parfum"],tier:2,quality:4,tags:[]},
+      {id:"aq-mac",name:"MAC",floor:0,pos:55,cats:["parfum"],tier:3,quality:4,tags:[]},
+      {id:"aq-watsons",name:"Watsons",floor:0,pos:60,cats:["parfum"],tier:1,quality:3,tags:[]},
+      {id:"aq-gratis",name:"Gratis",floor:0,pos:65,cats:["parfum"],tier:1,quality:2,tags:[]},
+      {id:"aq-altinbas",name:"Altınbaş",floor:0,pos:70,cats:["taki"],tier:2,quality:4,tags:[]},
+      {id:"aq-atasay",name:"Atasay",floor:0,pos:75,cats:["taki"],tier:2,quality:4,tags:[]},
+      {id:"aq-swarovski",name:"Swarovski",floor:0,pos:79,cats:["taki"],tier:3,quality:4,tags:[]},
+      {id:"aq-flo",name:"Flo",floor:0,pos:84,cats:["ayakkabi"],tier:1,quality:3,tags:["casual","sport","business"],
         products:[P("Dockers Klasik Ayakkabı",1799,1,3,["business","formal"],"erkek"),P("Kinetix Sneaker",999,1,2,["casual","sport"],"unisex")]},
-      {id:"aq-mango",name:"Mango",floor:0,pos:56,cats:["elbise","gomlek","canta"],tier:1,quality:3,tags:["casual","business"]},
-      {id:"aq-watsons",name:"Watsons",floor:0,pos:66,cats:["parfum"],tier:1,quality:3,tags:[]},
-      {id:"aq-defacto",name:"DeFacto",floor:3,pos:40,cats:["gomlek","takim","ayakkabi"],tier:1,quality:2,tags:["casual","business"]},
-      {id:"aq-mediamarkt",name:"MediaMarkt",floor:3,pos:60,cats:[],tier:2,quality:3,tags:[]}
+      {id:"aq-migros",name:"Migros",floor:0,pos:90,cats:["market"],tier:1,quality:3,tags:[]},
+
+      /* KAT 1 — erkek/kadın moda, ayakkabı, resmi giyim (test katı) */
+      {id:"aq-network",name:"Network",floor:1,pos:8,cats:["takim","gomlek","ayakkabi"],tier:2,quality:4,tags:["business","formal"],
+        products:[P("Klasik Deri Ayakkabı",4290,2,4,["formal","business"],"erkek")]},
+      {id:"aq-kigili",name:"Kiğılı",floor:1,pos:13,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takımı",8500,2,4,["formal"],"erkek"),P("Klasik Takım Elbise",6500,2,4,["formal","business"],"erkek")]},
+      {id:"aq-damat",name:"Damat Tween",floor:1,pos:18,cats:["takim","gomlek","kravat"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takım Elbise",9750,2,4,["formal"],"erkek"),P("İpek Papyon",890,2,4,["formal"],"erkek")]},
+      {id:"aq-sarar",name:"Sarar",floor:1,pos:23,cats:["takim","gomlek"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Smokin Takımı",8900,2,4,["formal"],"erkek")]},
+      {id:"aq-beymenclub",name:"Beymen Club",floor:1,pos:28,cats:["gomlek","takim","ayakkabi"],tier:3,quality:4,tags:["business","casual","formal"],
+        products:[P("Deri Klasik Ayakkabı",3990,3,4,["formal","business"],"erkek")]},
+      {id:"aq-cacharel",name:"Cacharel",floor:1,pos:33,cats:["gomlek","takim"],tier:2,quality:4,tags:["business","formal"]},
+      {id:"aq-ipekyol",name:"İpekyol",floor:1,pos:37,cats:["elbise","gomlek"],tier:2,quality:4,tags:["business","formal"],
+        products:[P("Abiye Elbise",4500,2,4,["formal"],"kadin")]},
+      {id:"aq-derimod",name:"Derimod",floor:1,pos:41,cats:["ayakkabi","canta","kemer"],tier:2,quality:4,tags:["formal","business","casual"],
+        products:[P("Hakiki Deri Oxford",3499,2,4,["formal","business"],"erkek"),P("Deri Loafer",2999,2,4,["business","casual"],"erkek")]},
+      {id:"aq-hotic",name:"Hotiç",floor:1,pos:45,cats:["ayakkabi","canta"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Rugan Klasik Ayakkabı",4299,2,4,["formal"],"erkek")]},
+      {id:"aq-inci",name:"İnci",floor:1,pos:49,cats:["ayakkabi","canta"],tier:1,quality:3,tags:["formal","business","casual"],
+        products:[P("Deri Klasik Ayakkabı",2499,1,3,["formal","business"],"erkek")]},
+      {id:"aq-kemal",name:"Kemal Tanca",floor:1,pos:53,cats:["ayakkabi"],tier:2,quality:3,tags:["formal","business"],
+        products:[P("Klasik Bağcıklı Ayakkabı",2799,2,3,["formal","business"],"erkek")]},
+      {id:"aq-divarese",name:"Divarese",floor:1,pos:57,cats:["ayakkabi"],tier:2,quality:4,tags:["formal","business"],
+        products:[P("Klasik Deri Ayakkabı",3899,2,4,["formal","business"],"erkek")]},
+      {id:"aq-greyder",name:"Greyder",floor:1,pos:61,cats:["ayakkabi"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Klasik Deri Ayakkabı",2999,2,3,["formal","business"],"erkek")]},
+      {id:"aq-ninewest",name:"Nine West",floor:1,pos:65,cats:["ayakkabi","canta"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Rugan Topuklu Ayakkabı",2799,2,3,["formal","business"],"kadin")]},
+      {id:"aq-desa",name:"Desa",floor:1,pos:69,cats:["canta","ayakkabi","kemer"],tier:3,quality:4,tags:["formal","business"],
+        products:[P("Deri Klasik Ayakkabı",4990,3,4,["formal","business"],"erkek")]},
+      {id:"aq-lacoste",name:"Lacoste",floor:1,pos:74,cats:["gomlek","ayakkabi"],tier:2,quality:4,tags:["casual","business","sport"],
+        products:[P("Deri Sneaker",4199,2,4,["casual","sport"],"unisex")]},
+      {id:"aq-matras",name:"Matraş",floor:1,pos:80,cats:["canta","kemer"],tier:2,quality:4,tags:["business","formal"]},
+      {id:"aq-koton",name:"Koton",floor:1,pos:86,cats:["gomlek","elbise"],tier:1,quality:2,tags:["casual"]},
+
+      /* KAT 2 — spor, çocuk, günlük */
+      {id:"aq-nike",name:"Nike",floor:2,pos:8,cats:["ayakkabi","spor"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Revolution Koşu Ayakkabısı",2999,2,4,["sport"],"unisex")]},
+      {id:"aq-adidas",name:"adidas",floor:2,pos:13,cats:["ayakkabi","spor"],tier:2,quality:4,tags:["sport","casual"],
+        products:[P("Ultraboost Koşu Ayakkabısı",5499,2,4,["sport"],"unisex")]},
+      {id:"aq-puma",name:"Puma",floor:2,pos:18,cats:["ayakkabi","spor"],tier:2,quality:3,tags:["sport","casual"]},
+      {id:"aq-sneaks",name:"Sneaks Up",floor:2,pos:23,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"],
+        products:[P("Nike / Vans Sneaker",3200,2,3,["sport","casual"],"unisex")]},
+      {id:"aq-newbalance",name:"New Balance",floor:2,pos:28,cats:["ayakkabi","spor"],tier:2,quality:4,tags:["sport","casual"]},
+      {id:"aq-skechers",name:"Skechers",floor:2,pos:33,cats:["ayakkabi"],tier:2,quality:3,tags:["sport","casual"]},
+      {id:"aq-decathlon",name:"Decathlon",floor:2,pos:39,cats:["spor","ayakkabi"],tier:1,quality:3,tags:["sport"],
+        products:[P("Koşu Ayakkabısı",1299,1,3,["sport"],"unisex")]},
+      {id:"aq-northface",name:"The North Face",floor:2,pos:45,cats:["spor","gomlek"],tier:3,quality:4,tags:["sport","casual"]},
+      {id:"aq-columbia",name:"Columbia",floor:2,pos:50,cats:["spor","gomlek"],tier:2,quality:4,tags:["sport","casual"]},
+      {id:"aq-mavi",name:"Mavi",floor:2,pos:55,cats:["gomlek","ayakkabi"],tier:1,quality:3,tags:["casual"]},
+      {id:"aq-defacto",name:"DeFacto",floor:2,pos:60,cats:["gomlek","takim","ayakkabi"],tier:1,quality:2,tags:["casual","business"]},
+      {id:"aq-lcw",name:"LC Waikiki",floor:2,pos:65,cats:["gomlek","takim","ayakkabi","elbise"],tier:1,quality:2,tags:["casual","business"],
+        products:[P("Klasik Ayakkabı",899,1,2,["business","formal"],"erkek")]},
+      {id:"aq-panco",name:"Panço",floor:2,pos:70,cats:["cocuk"],tier:1,quality:3,tags:[]},
+      {id:"aq-mothercare",name:"Mothercare",floor:2,pos:75,cats:["cocuk"],tier:2,quality:3,tags:[]},
+      {id:"aq-toyzz",name:"Toyzz Shop",floor:2,pos:80,cats:["cocuk"],tier:1,quality:3,tags:[]},
+      {id:"aq-boyner",name:"Boyner",floor:2,pos:87,cats:["ayakkabi","gomlek","takim","parfum"],tier:2,quality:3,tags:["business","casual","formal"],
+        products:[P("Fabrika Klasik Ayakkabı",2299,1,3,["formal","business"],"erkek")]},
+
+      /* KAT 3 — elektronik, ev, kitap, yeme-içme, sinema */
+      {id:"aq-apple",name:"Apple",floor:3,pos:8,cats:["elektronik"],tier:3,quality:5,tags:[]},
+      {id:"aq-mediamarkt",name:"MediaMarkt",floor:3,pos:14,cats:["elektronik"],tier:2,quality:3,tags:[]},
+      {id:"aq-teknosa",name:"Teknosa",floor:3,pos:20,cats:["elektronik"],tier:2,quality:3,tags:[]},
+      {id:"aq-samsung",name:"Samsung",floor:3,pos:26,cats:["elektronik"],tier:2,quality:4,tags:[]},
+      {id:"aq-vodafone",name:"Vodafone",floor:3,pos:31,cats:["elektronik"],tier:1,quality:3,tags:[]},
+      {id:"aq-englishhome",name:"English Home",floor:3,pos:37,cats:["ev"],tier:1,quality:3,tags:[]},
+      {id:"aq-madamecoco",name:"Madame Coco",floor:3,pos:42,cats:["ev"],tier:1,quality:3,tags:[]},
+      {id:"aq-karaca",name:"Karaca",floor:3,pos:47,cats:["ev"],tier:2,quality:3,tags:[]},
+      {id:"aq-mudo",name:"Mudo Concept",floor:3,pos:52,cats:["ev","gomlek"],tier:2,quality:4,tags:[]},
+      {id:"aq-dr",name:"D&R",floor:3,pos:58,cats:["kitap"],tier:1,quality:3,tags:[]},
+      {id:"aq-atasun",name:"Atasun Optik",floor:3,pos:63,cats:["taki"],tier:2,quality:3,tags:[]},
+      {id:"aq-cinema",name:"Cinemaximum",floor:3,pos:69,cats:[],tier:2,quality:4,tags:[]},
+      {id:"aq-afacan",name:"Afacan Park",floor:3,pos:74,cats:["cocuk"],tier:1,quality:3,tags:[]},
+      {id:"aq-bk",name:"Burger King",floor:3,pos:80,cats:["yeme"],tier:1,quality:2,tags:[]},
+      {id:"aq-kahvedunyasi",name:"Kahve Dünyası",floor:3,pos:86,cats:["yeme"],tier:2,quality:3,tags:[]},
+      {id:"aq-starbucks",name:"Starbucks",floor:3,pos:91,cats:["yeme"],tier:2,quality:3,tags:[]}
     ]
   }
 ];
@@ -724,6 +836,7 @@ function sortMatches(list,mode){
 function renderResults(){
   const list=sortMatches(state.matches,state.sort);
   $("resCount").textContent = list.length?("· "+list.length):"";
+  const _tc=$("tabCount"); if(_tc) _tc.textContent = list.length?(" "+list.length):"";
   const el=$("results"); el.innerHTML="";
   if(!list.length){
     el.innerHTML=`<div class="empty">Bu arama için katalogda eşleşme yok.<br>Farklı bir ürün ya da örnek aramalardan birini dene.</div>`;
@@ -776,9 +889,13 @@ function renderMalls(){
     const a=agg[mall.id];
     const stores=a?Object.values(a.stores):[];
     return {mall,count:stores.length,best:a?a.best:0};
-  }).sort((x,y)=>y.best-x.best || y.count-x.count);
+  }).sort((x,y)=>(y.mall.flagship?1:0)-(x.mall.flagship?1:0) || y.best-x.best || y.count-x.count);
 
-  if(!state.mallId || !agg[state.mallId]){ state.mallId = ranked.find(r=>r.count)?.mall.id || ranked[0].mall.id; }
+  // varsayılan: eşleşmesi olan bayrak-AVM (Aqua Florya) öncelikli
+  if(!state.mallId || !agg[state.mallId]){
+    const flag=ranked.find(r=>r.mall.flagship && r.count);
+    state.mallId = (flag && flag.mall.id) || ranked.find(r=>r.count)?.mall.id || ranked[0].mall.id;
+  }
 
   ranked.forEach(r=>{
     const div=document.createElement("div");
@@ -787,7 +904,7 @@ function renderMalls(){
     div.innerHTML=`
       <span class="dot"></span>
       <div>
-        <div class="mn">${r.mall.name}</div>
+        <div class="mn">${r.mall.name}${r.mall.flagship?' <span class="badge">TEST AVM\'Sİ</span>':''}</div>
         <div class="md">${r.mall.area}</div>
       </div>
       <div class="cnt"><b>${r.count}</b><span>MAĞAZA</span></div>`;
@@ -891,15 +1008,18 @@ function buildMap(mall,order,entrance){
   svg+=`<line x1="${escX}" y1="${padTop+7}" x2="${escX}" y2="${H-padTop-7}" stroke="var(--line-strong)" stroke-dasharray="1 6" opacity=".6"/>`;
 
   // mağaza kutuları (önce diğerleri, sonra eşleşenler üstte)
+  const esc=t=>t.replace(/&/g,"&amp;").replace(/</g,"&lt;");
   const drawStore=(st)=>{
     const m=meta[st.id]; const cx=m.cx, cy=m.cyc+m.yOff;
     const matched=!!inOrder[st.id];
-    const w=Math.max(42, st.name.length*5.8+14);
+    // kalabalık katlarda etiketi kısalt (tam ad listede/adımlarda görünür)
+    const lbl=st.name.length>13?st.name.slice(0,12)+"…":st.name;
+    const w=Math.max(38, lbl.length*5.4+12);
     const fill=matched?"var(--match-soft)":"var(--surface-2)";
     const stroke=matched?"var(--match)":"var(--line-strong)";
     const tcol=matched?"var(--ink)":"var(--muted)";
     return `<g><rect x="${cx-w/2}" y="${cy-BH/2}" width="${w}" height="${BH}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${matched?1.5:1}"/>`+
-           `<text x="${cx}" y="${cy+3.5}" text-anchor="middle" font-size="10.5" font-weight="${matched?600:500}" fill="${tcol}" font-family="var(--font-body)">${st.name}</text></g>`;
+           `<text x="${cx}" y="${cy+3.5}" text-anchor="middle" font-size="10" font-weight="${matched?600:500}" fill="${tcol}" font-family="var(--font-body)">${esc(lbl)}</text></g>`;
   };
   mall.stores.filter(s=>!inOrder[s.id]).forEach(s=>svg+=drawStore(s));
 
@@ -1090,6 +1210,7 @@ const EXAMPLES=[
   "ofis için kaliteli deri ayakkabı",
   "spor için koşu ayakkabısı",
   "3000 TL altında erkek klasik ayakkabı",
+  "çocuğuma günlük spor ayakkabı",
   "smokine papyon lazım"
 ];
 function renderChips(){
@@ -1097,8 +1218,8 @@ function renderChips(){
   EXAMPLES.forEach(ex=>{
     const b=document.createElement("button");
     b.className="chip"; b.type="button";
-    b.innerHTML=ex.replace(/(smokin|düğün|ofis|spor|klasik|papyon)/i,'<b>$1</b>');
-    b.onclick=()=>{$("q").value=ex;runSearch(ex);window.scrollTo({top:0,behavior:"smooth"});};
+    b.innerHTML=ex.replace(/(smokin|düğün|ofis|spor|klasik|papyon|çocuk)/i,'<b>$1</b>');
+    b.onclick=()=>{$("q").value=ex;doSearch(ex);};
     el.appendChild(b);
   });
 }
@@ -1118,12 +1239,26 @@ function renderChips(){
   };
 })();
 
+/* mobil sekme geçişi */
+function setTab(name){
+  document.body.setAttribute("data-tab",name);
+  [["ara","tabAra"],["urunler","tabUrunler"],["rota","tabRota"]].forEach(([n,id])=>{
+    const b=$(id); if(b) b.classList.toggle("active", n===name);
+  });
+  window.scrollTo(0,0);
+  if(name==="rota" && state.mapMode==="3d"){ requestAnimationFrame(()=>VIEW3D.resize()); }
+}
+function doSearch(v){ runSearch(v); setTab("urunler"); }
+
 /* olaylar */
-$("goBtn").onclick=()=>runSearch($("q").value.trim()||EXAMPLES[0]);
-$("q").addEventListener("keydown",e=>{if(e.key==="Enter")runSearch($("q").value.trim()||EXAMPLES[0]);});
+$("goBtn").onclick=()=>doSearch($("q").value.trim()||EXAMPLES[0]);
+$("q").addEventListener("keydown",e=>{if(e.key==="Enter"){$("q").blur();doSearch($("q").value.trim()||EXAMPLES[0]);}});
 $("sortSel").onchange=e=>{state.sort=e.target.value;renderResults();};
 $("mode2d").onclick=()=>{ if(state.mapMode!=="2d"){ state.mapMode="2d"; applyMapMode(); } };
 $("mode3d").onclick=()=>{ if(state.mapMode!=="3d"){ state.mapMode="3d"; applyMapMode(); } };
+$("tabAra").onclick=()=>setTab("ara");
+$("tabUrunler").onclick=()=>setTab("urunler");
+$("tabRota").onclick=()=>setTab("rota");
 
 /* PWA: service worker kaydı — yalnızca gerçek HTTPS hosting'de ve iframe dışında */
 if("serviceWorker" in navigator && location.protocol.startsWith("http") && window.top===window.self){
@@ -1131,6 +1266,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http") && windo
 }
 
 /* başlangıç */
+setTab("ara");                 // mobilde önce arama ekranı
 renderChips();
 $("q").value=EXAMPLES[0];
 runSearch(EXAMPLES[0]);
